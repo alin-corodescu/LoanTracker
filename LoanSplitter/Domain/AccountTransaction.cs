@@ -9,7 +9,6 @@ public class AccountTransaction
     }
 
     public string PersonName { get; }
-    
-    public double Amount { get; }
 
+    public double Amount { get; }
 }

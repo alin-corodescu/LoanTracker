@@ -7,19 +7,17 @@ public class State(Dictionary<string, object> entities)
         return (T)entities[entityName];
     }
 
-    public State WithUpdates(Dictionary<string,object> updates)
+    public State WithUpdates(Dictionary<string, object> updates)
     {
         var newEntities = new Dictionary<string, object>(updates);
 
         foreach (var existing in entities)
         {
-            if (newEntities.ContainsKey(existing.Key))
-            {
-                continue;
-            }
-            
+            if (newEntities.ContainsKey(existing.Key)) continue;
+
             newEntities[existing.Key] = existing.Value;
         }
+
         return new State(newEntities);
     }
 }

@@ -2,16 +2,18 @@ namespace LoanSplitter.Domain;
 
 public class Account
 {
-    private List<AccountTransaction> _accountTransactions = new List<AccountTransaction>();
-    
+    private List<AccountTransaction> _accountTransactions = new();
+
     public Account WithTransaction(AccountTransaction payment)
     {
-        var updatedAccount = new Account();
-        
-        updatedAccount._accountTransactions = new List<AccountTransaction>(this._accountTransactions);
-        
-        updatedAccount._accountTransactions.Add(payment);
-        
-        return updatedAccount;
+        return new Account
+        {
+            _accountTransactions =
+            [
+                .._accountTransactions,
+                payment
+            ]
+        };
+        ;
     }
 }

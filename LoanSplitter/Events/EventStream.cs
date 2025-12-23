@@ -1,102 +1,68 @@
-using LoanSplitter.Domain;
-
 namespace LoanSplitter.Events;
 
 public class EventStream
 {
-    private List<EventBase> _userEvents;
+    private readonly List<(DateTime Date, State State)> _historicalStates;
 
-    private List<(DateTime Date, State State)> _historicalStates;
-    
-    private List<MaybeEvent> _maybeEvents;
+    private readonly List<MaybeEvent> _maybeEvents;
+
+    private readonly List<EventBase> _systemEvents;
+    private readonly List<EventBase> _userEvents;
     private int _userEventsArrayIndex;
-    
-    private List<EventBase> _systemEvents;
-    
 
     public EventStream(List<EventBase> userEvents)
     {
         _userEvents = userEvents;
         var state = new State(new Dictionary<string, object>());
-        
-        this._historicalStates = new List<(DateTime Date, State State)>();
-        this._maybeEvents = new List<MaybeEvent>();
-        this._systemEvents = new List<EventBase>();
-        
+
+        _historicalStates = new List<(DateTime Date, State State)>();
+        _maybeEvents = new List<MaybeEvent>();
+        _systemEvents = new List<EventBase>();
+
         // Check if there is any pending event with an earlier date than the current event.
 
-        int counter = 0;
+        var counter = 0;
         while (true)
         {
-            var nextEvent = this.GetNextEvent(state);
+            var nextEvent = GetNextEvent(state);
 
             if (nextEvent.Event == null && !nextEvent.HasMore)
-            {
                 // this is our exit condition. Otherwise we keep going.
                 // todo add a date limit as well?
                 break;
-            }
-            
-            if (nextEvent.Event != null)
-            {
-                state = this.ProcessEvent(state, nextEvent.Event);
-            }
 
-            if (counter++ == 1000)
-            {
-                throw new ApplicationException("Too many events");
-            }
+            if (nextEvent.Event != null) state = ProcessEvent(state, nextEvent.Event);
+
+            if (counter++ == 5000) throw new ApplicationException("Too many events");
         }
     }
 
     private (EventBase? Event, bool HasMore) GetNextEvent(State state)
     {
         var nextUserEvent = _userEventsArrayIndex >= _userEvents.Count ? null : _userEvents[_userEventsArrayIndex];
-        
-        var eligibleMaybeEvent = this._maybeEvents
+
+        var eligibleMaybeEvent = _maybeEvents
             .FirstOrDefault(maybeEvent => nextUserEvent == null || maybeEvent.CheckDate < nextUserEvent.Date);
-        
+
         var generatedEvent = eligibleMaybeEvent?.EventFactory(state);
-        
+
         if (generatedEvent != null)
         {
-            this._systemEvents.Add(generatedEvent);
+            _systemEvents.Add(generatedEvent);
             return (generatedEvent, true);
         }
 
         if (eligibleMaybeEvent != null)
-        {
             // Remove the maybe eligible event that has been processed.
-            this._maybeEvents.Remove(eligibleMaybeEvent);
-        }
+            _maybeEvents.Remove(eligibleMaybeEvent);
 
-        if (nextUserEvent == null && this._maybeEvents.Count == 0)
-        {
+        if (nextUserEvent == null && _maybeEvents.Count == 0)
             // now we finished everything.
             return (null, false);
-        }
-        
+
         // only consume now the user event.
         _userEventsArrayIndex++;
         return (nextUserEvent, true);
-    }
-
-    private State ApplyEligibleMaybeEvents(State state, EventBase upcomingUserEvent)
-    {
-        var eligibleMaybeEvent = this._maybeEvents
-            .FirstOrDefault(maybeEvent => maybeEvent.CheckDate < upcomingUserEvent.Date);
-
-        var generatedEvent = eligibleMaybeEvent?.EventFactory(state);
-        
-        if (generatedEvent != null)
-        {
-            state = this.ProcessEvent(state, generatedEvent);
-        }
-
-        // Remove the event if it has been processed.
-        if (eligibleMaybeEvent != null) this._maybeEvents.Remove(eligibleMaybeEvent);
-
-        return state;
     }
 
     private State ProcessEvent(State state, EventBase ev)
@@ -104,13 +70,20 @@ public class EventStream
         var stateChange = ev.Apply(state);
         var newState = state.WithUpdates(stateChange.StateUpdates);
 
-        if (stateChange.MaybeEvent != null)
-        {
-            this._maybeEvents.Add(stateChange.MaybeEvent);      
-        }
-        
-        this._historicalStates.Add((ev.Date, newState));
-        
+        if (stateChange.MaybeEvent != null) _maybeEvents.Add(stateChange.MaybeEvent);
+
+        _historicalStates.Add((ev.Date, newState));
+
         return newState;
+    }
+
+    public State? GetStateForDate(DateTime date)
+    {
+        var i = 0;
+        while (_historicalStates[i].Date < date && i < _historicalStates.Count) i++;
+
+        if (i == 0) return null;
+
+        return _historicalStates[i].State;
     }
 }

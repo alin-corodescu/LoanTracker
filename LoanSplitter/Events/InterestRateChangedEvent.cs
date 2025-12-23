@@ -14,7 +14,7 @@ public class InterestRateChangedEvent(DateTime date, string loanName, double rat
         var loan = state.GetEntityByName<Loan>(loanName);
         var newLoan = loan.WithInterestRate(rate);
 
-        return new EventOutcome(new Dictionary<string, object>()
+        return new EventOutcome(new Dictionary<string, object>
         {
             { loanName, newLoan }
         });

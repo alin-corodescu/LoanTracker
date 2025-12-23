@@ -8,9 +8,9 @@ public class AccountTransactionEvent(DateTime date, string acctName, AccountTran
     public override EventOutcome Apply(State state)
     {
         var acct = state.GetEntityByName<Account>(acctName);
-        
+
         var updatedAcct = acct.WithTransaction(transaction);
-        
+
         return new EventOutcome(new Dictionary<string, object> { { acctName, updatedAcct } });
     }
 }

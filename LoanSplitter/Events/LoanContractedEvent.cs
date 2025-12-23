@@ -2,10 +2,11 @@ using LoanSplitter.Domain;
 
 namespace LoanSplitter.Events;
 
-public class LoanContractedEvent(DateTime date,
+public class LoanContractedEvent(
+    DateTime date,
     string loanName,
-    double principal, 
-    double nominalRate, 
+    double principal,
+    double nominalRate,
     int term,
     string backingAccountName,
     string name1,
@@ -15,13 +16,13 @@ public class LoanContractedEvent(DateTime date,
     public override EventOutcome Apply(State state)
     {
         var loan = new Loan(principal, nominalRate, term, name1, name2);
-        var updates = new Dictionary<string, object>()
+        var updates = new Dictionary<string, object>
         {
             { loanName, loan }
         };
-        
+
         return new EventOutcome(updates,
-            LoanPaymentEvent.CreateNextPaymentMaybeEvent(this.Date,
+            LoanPaymentEvent.CreateNextPaymentMaybeEvent(Date,
                 backingAccountName,
                 loanName,
                 term));
