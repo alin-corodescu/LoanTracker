@@ -13,18 +13,26 @@ public class LoanContractedEvent(
     string name2)
     : EventBase(date)
 {
+    public string LoanName { get; } = loanName;
+    public double Principal { get; } = principal;
+    public double NominalRate { get; } = nominalRate;
+    public int Term { get; } = term;
+    public string BackingAccountName { get; } = backingAccountName;
+    public string Name1 { get; } = name1;
+    public string Name2 { get; } = name2;
+
     public override EventOutcome Apply(State state)
     {
-        var loan = new Loan(principal, nominalRate, term, name1, name2);
+        var loan = new Loan(Principal, NominalRate, Term, Name1, Name2);
         var updates = new Dictionary<string, object>
         {
-            { loanName, loan }
+            { LoanName, loan }
         };
 
         return new EventOutcome(updates,
             LoanPaymentEvent.CreateNextPaymentMaybeEvent(Date,
-                backingAccountName,
-                loanName,
-                term));
+                BackingAccountName,
+                LoanName,
+                Term));
     }
 }

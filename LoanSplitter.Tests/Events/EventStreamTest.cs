@@ -48,9 +48,9 @@ public class EventStreamTest
 
         var stream = new EventStream(events);
 
-        var state = stream.GetStateForDate(new DateTime(2026, 6, 1));
-
-        var loan = state.GetEntityByName<Loan>("apartLoan");
+    var state = stream.GetStateForDate(new DateTime(2026, 6, 1));
+    Assert.IsNotNull(state);
+    var loan = state!.GetEntityByName<Loan>("apartLoan");
         var alin = loan.SubLoans["Alin"];
         var diana = loan.SubLoans["Diana"];
 

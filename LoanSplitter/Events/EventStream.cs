@@ -79,11 +79,12 @@ public class EventStream
 
     public State? GetStateForDate(DateTime date)
     {
-        var i = 0;
-        while (_historicalStates[i].Date < date && i < _historicalStates.Count) i++;
+        if (_historicalStates.Count == 0) return null;
 
-        if (i == 0) return null;
+        for (var i = _historicalStates.Count - 1; i >= 0; i--)
+            if (_historicalStates[i].Date <= date)
+                return _historicalStates[i].State;
 
-        return _historicalStates[i].State;
+        return null;
     }
 }
