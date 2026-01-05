@@ -9,6 +9,7 @@ public class Loan
     // todo add a way to change the monthly fee via an event.
     private readonly double _monthlyFee = 65;
     private LoanPayment? _monthlyPaymentOverride;
+    private Dictionary<string, double>? _nextPaymentShareOverride;
 
     private double? _upcomingInterestRate;
     
@@ -44,6 +45,7 @@ public class Loan
         newLoan._upcomingInterestRate = _upcomingInterestRate;
         newLoan._monthlyPaymentOverride = _monthlyPaymentOverride;
         newLoan._advancePayments = new List<AccountTransaction>(_advancePayments);
+        newLoan._nextPaymentShareOverride = _nextPaymentShareOverride?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
 
         return newLoan;
     }
@@ -87,6 +89,7 @@ public class Loan
         updatedLoan.ApplyAdvancePayments();
         updatedLoan.ApplyPendingInterestRateChange();
         updatedLoan._monthlyPaymentOverride = null;
+        updatedLoan._nextPaymentShareOverride = null;
         return updatedLoan;
     }
 
@@ -111,6 +114,9 @@ public class Loan
 
     private Dictionary<string, double> GetSubLoanShares()
     {
+        if (_nextPaymentShareOverride is { Count: > 0 })
+            return _nextPaymentShareOverride.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+
         // this._amount, in theory, should sum up to subLoans._amount.
         return SubLoans.ToDictionary(
             sl => sl.Key,
@@ -129,6 +135,26 @@ public class Loan
         return new LoanPayment(monthlyPayment - thisMonthInterest, thisMonthInterest, _monthlyFee);
     }
 
+    public double GetProjectedInterestRemaining()
+    {
+        if (RemainingTermInMonths <= 0 || RemainingAmount <= 0)
+            return 0;
+
+        var monthlyRate = _annualInterestRate / 12 / 100;
+
+        if (monthlyRate <= 0)
+            return 0;
+
+        var denominator = 1 - Math.Pow(1 + monthlyRate, -RemainingTermInMonths);
+        if (Math.Abs(denominator) < 1e-12)
+            return 0;
+
+        var monthlyPayment = RemainingAmount * monthlyRate / denominator;
+        var projectedInterest = monthlyPayment * RemainingTermInMonths - RemainingAmount;
+
+        return Math.Max(0, projectedInterest);
+    }
+
     public Loan WithCorrectNextPayment(double principal, double interest)
     {
         var updatedLoan = Clone();
@@ -139,6 +165,22 @@ public class Loan
         updatedLoan.ApplyPendingInterestRateChange();
 
         updatedLoan._monthlyPaymentOverride = new LoanPayment(principal, interest, _monthlyFee);
+
+        return updatedLoan;
+    }
+
+    public Loan WithCorrectNextPaymentSplit(IReadOnlyDictionary<string, double> contributions)
+    {
+        ArgumentNullException.ThrowIfNull(contributions);
+
+        if (!SubLoans.Any())
+            throw new InvalidOperationException("Cannot override contributions for a loan without participants.");
+
+        if (contributions.Count == 0)
+            throw new ArgumentException("At least one contribution override must be provided.", nameof(contributions));
+
+        var updatedLoan = Clone();
+        updatedLoan._nextPaymentShareOverride = updatedLoan.NormalizeContributionOverrides(contributions);
 
         return updatedLoan;
     }
@@ -175,6 +217,40 @@ public class Loan
         updatedLoan._advancePayments.Add(transaction);
 
         return updatedLoan;
+    }
+
+    private Dictionary<string, double> NormalizeContributionOverrides(IReadOnlyDictionary<string, double> contributions)
+    {
+        var allowedParticipants = new HashSet<string>(SubLoans.Keys);
+
+        if (allowedParticipants.Count == 0)
+            throw new InvalidOperationException("Loan has no sub-loans to apply contribution overrides to.");
+
+        double total = 0;
+
+        foreach (var kvp in contributions)
+        {
+            if (!allowedParticipants.Contains(kvp.Key))
+                throw new InvalidOperationException($"Unknown participant '{kvp.Key}' in contribution overrides.");
+
+            if (kvp.Value < 0)
+                throw new ArgumentOutOfRangeException(nameof(contributions), "Contribution overrides must be non-negative.");
+
+            total += kvp.Value;
+        }
+
+        if (total <= 0)
+            throw new InvalidOperationException("Contribution overrides must sum to a positive value.");
+
+        var normalized = new Dictionary<string, double>();
+
+        foreach (var participant in allowedParticipants)
+        {
+            var contribution = contributions.TryGetValue(participant, out var amount) ? amount : 0;
+            normalized[participant] = contribution / total;
+        }
+
+        return normalized;
     }
 
     public record LoanPayment(double Principal, double Interest, double Fee)

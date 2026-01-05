@@ -1,0 +1,61 @@
+[
+  {
+    "type": "AccountCreated",
+    "date": "2025-06-01",
+    "acctName": "creditAcct"
+  },
+  {
+    "type": "LoanContracted",
+    "date": "2025-10-15",
+    "loanName": "apartLoan",
+    "principal": 8150100,
+    "nominalRate": 4.74,
+    "term": 360,
+    "backingAccountName": "creditAcct",
+    "name1": "Alin",
+    "name2": "Diana"
+  },
+  {
+    "type": "AdvancePayment",
+    "date": "2025-11-01",
+    "loanName": "apartLoan",
+    "transaction": {
+      "amount": 1260100,
+      "person": "Alin"
+    }
+  },
+  {
+    "type": "AdvancePayment",
+    "date": "2025-11-01",
+    "loanName": "apartLoan",
+    "transaction": {
+      "amount": 440000,
+      "person": "Diana"
+    }
+  },
+  {
+    "type": "CorrectNextLoanPayment",
+    "date": "2025-11-01",
+    "loanName": "apartLoan",
+    "principal": 8129,
+    "interest": 40764
+  },
+  {
+    "type": "CorrectNextLoanPaymentSplit",
+    "date": "2025-11-15",
+    "loanName": "apartLoan",
+    "contributions": {
+      "Alin": 1,
+      "Diana": 0
+    }
+  },
+    {
+    "type": "CorrectNextLoanPaymentSplit",
+    "date": "2025-12-15",
+    "loanName": "apartLoan",
+    "contributions": {
+      "Alin": 1,
+      "Diana": 0
+    }
+  }
+]

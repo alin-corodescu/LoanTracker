@@ -114,6 +114,12 @@ public sealed class UserEventJsonDeserializer
                         GetRequiredDouble(root, "principal"),
                         GetRequiredDouble(root, "interest")),
 
+                "CorrectNextLoanPaymentSplit" or "correctNextLoanPaymentSplit" =>
+                    new CorrectNextLoanPaymentSplitEvent(
+                        date,
+                        GetRequiredString(root, "loanName"),
+                        ReadContributionOverrides(root, "contributions")),
+
                 "InterestRateChanged" or "interestRateChanged" =>
                     new InterestRateChangedEvent(
                         date,
@@ -174,6 +180,13 @@ public sealed class UserEventJsonDeserializer
                     writer.WriteString("loanName", correction.LoanName);
                     writer.WriteNumber("principal", correction.Principal);
                     writer.WriteNumber("interest", correction.Interest);
+                    break;
+
+                case CorrectNextLoanPaymentSplitEvent splitCorrection:
+                    writer.WriteString("type", "CorrectNextLoanPaymentSplit");
+                    writer.WriteString("loanName", splitCorrection.LoanName);
+                    writer.WritePropertyName("contributions");
+                    WriteContributionOverrides(writer, splitCorrection.Contributions);
                     break;
 
                 case InterestRateChangedEvent interestRateChanged:
@@ -286,6 +299,44 @@ public sealed class UserEventJsonDeserializer
             writer.WriteStartObject();
             writer.WriteNumber("amount", transaction.Amount);
             writer.WriteString("person", transaction.PersonName);
+            writer.WriteEndObject();
+        }
+
+        private static IReadOnlyDictionary<string, double> ReadContributionOverrides(JsonElement obj, string propertyName)
+        {
+            if (!obj.TryGetProperty(propertyName, out var element))
+                throw new JsonException($"Missing required property '{propertyName}'.");
+
+            if (element.ValueKind != JsonValueKind.Object)
+                throw new JsonException($"Property '{propertyName}' must be an object.");
+
+            var contributions = new Dictionary<string, double>();
+
+            foreach (var property in element.EnumerateObject())
+            {
+                var value = property.Value.ValueKind switch
+                {
+                    JsonValueKind.Number => property.Value.GetDouble(),
+                    JsonValueKind.String when double.TryParse(property.Value.GetString(), out var d) => d,
+                    _ => throw new JsonException($"Contribution '{property.Name}' must be a number.")
+                };
+
+                contributions[property.Name] = value;
+            }
+
+            if (contributions.Count == 0)
+                throw new JsonException($"Property '{propertyName}' must contain at least one contribution entry.");
+
+            return contributions;
+        }
+
+        private static void WriteContributionOverrides(Utf8JsonWriter writer, IReadOnlyDictionary<string, double> contributions)
+        {
+            writer.WriteStartObject();
+
+            foreach (var kvp in contributions)
+                writer.WriteNumber(kvp.Key, kvp.Value);
+
             writer.WriteEndObject();
         }
     }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
 using LoanSplitter.Domain;
 using LoanSplitter.Events;
@@ -106,16 +107,25 @@ public class UserEventJsonDeserializerTest
             8129,
             40764);
 
+        var splitCorrection = new CorrectNextLoanPaymentSplitEvent(
+            new DateTime(2025, 12, 1),
+            "apartLoan",
+            new Dictionary<string, double>
+            {
+                { "Alin", 3 },
+                { "Diana", 1 }
+            });
+
         var rateChanged = new InterestRateChangedEvent(
             new DateTime(2026, 1, 15),
             "apartLoan",
             5.25);
 
         var serializer = new UserEventJsonDeserializer();
-        var json = serializer.Serialize(new List<EventBase> { advancePayment, correction, rateChanged });
+        var json = serializer.Serialize(new List<EventBase> { advancePayment, correction, splitCorrection, rateChanged });
         var roundTripped = serializer.Deserialize(json);
 
-        AssertCount(roundTripped, 3);
+        AssertCount(roundTripped, 4);
 
         var roundAdvance = (AdvancePaymentEvent)roundTripped[0];
         Assert.AreEqual(advancePayment.LoanName, roundAdvance.LoanName);
@@ -127,7 +137,11 @@ public class UserEventJsonDeserializerTest
         Assert.AreEqual(correction.Principal, roundCorrection.Principal);
         Assert.AreEqual(correction.Interest, roundCorrection.Interest);
 
-        var roundRate = (InterestRateChangedEvent)roundTripped[2];
+        var roundSplit = (CorrectNextLoanPaymentSplitEvent)roundTripped[2];
+        Assert.AreEqual(splitCorrection.LoanName, roundSplit.LoanName);
+        CollectionAssert.AreEquivalent(splitCorrection.Contributions.ToList(), roundSplit.Contributions.ToList());
+
+        var roundRate = (InterestRateChangedEvent)roundTripped[3];
         Assert.AreEqual(rateChanged.LoanName, roundRate.LoanName);
         Assert.AreEqual(rateChanged.Rate, roundRate.Rate);
     }

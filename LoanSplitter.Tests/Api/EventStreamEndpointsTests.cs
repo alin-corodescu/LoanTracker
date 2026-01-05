@@ -91,6 +91,60 @@ public sealed class EventStreamEndpointsTests
         Assert.AreEqual(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
+    [TestMethod]
+    public async Task GetEventsUpToDate()
+    {
+        var client = EnsureClient();
+
+        const string newStreamPayload = """
+[
+  { "type": "AccountCreated", "date": "2025-06-01", "acctName": "creditAcct" },
+  {
+    "type": "LoanContracted",
+    "date": "2025-11-01",
+    "loanName": "apartLoan",
+    "principal": 8150100,
+    "nominalRate": 4.74,
+    "term": 360,
+    "backingAccountName": "creditAcct",
+    "name1": "Alin",
+    "name2": "Diana"
+  }
+]
+""";
+
+        var createResponse = await client.PostAsync("/eventStream",
+            new StringContent(newStreamPayload, Encoding.UTF8, "application/json"));
+        createResponse.EnsureSuccessStatusCode();
+
+        var created = await createResponse.Content.ReadFromJsonAsync<CreateEventStreamResponse>();
+        Assert.IsNotNull(created);
+
+        // Query events up to a date that should include some system-generated LoanPayment events
+        var queryResponse = await client.GetAsync($"/eventStream/{created.Id}/events?date=2026-01-01");
+        queryResponse.EnsureSuccessStatusCode();
+
+        var eventsJson = await queryResponse.Content.ReadAsStringAsync();
+        using var document = JsonDocument.Parse(eventsJson);
+        var root = document.RootElement;
+
+        Assert.AreEqual(JsonValueKind.Array, root.ValueKind);
+        
+        // Should have AccountCreated, LoanContracted, and at least one LoanPayment (system generated)
+        var eventTypes = new List<string>();
+        foreach (var element in root.EnumerateArray())
+        {
+            if (element.TryGetProperty("type", out var typeProp))
+            {
+                eventTypes.Add(typeProp.GetString()!);
+            }
+        }
+
+        CollectionAssert.Contains(eventTypes, "AccountCreated");
+        CollectionAssert.Contains(eventTypes, "LoanContracted");
+        CollectionAssert.Contains(eventTypes, "LoanPayment", "Should contain system-generated LoanPayment events");
+    }
+
     private HttpClient EnsureClient()
     {
         if (_factory is null) throw new InvalidOperationException("Test factory is not initialized.");

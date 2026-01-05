@@ -6,6 +6,7 @@ public class EventStream
 
     private readonly List<MaybeEvent> _maybeEvents;
 
+    private readonly List<EventBase> _processedEvents;
     private readonly List<EventBase> _systemEvents;
     private readonly List<EventBase> _userEvents;
     private int _userEventsArrayIndex;
@@ -17,6 +18,7 @@ public class EventStream
 
         _historicalStates = new List<(DateTime Date, State State)>();
         _maybeEvents = new List<MaybeEvent>();
+        _processedEvents = new List<EventBase>();
         _systemEvents = new List<EventBase>();
 
         // Check if there is any pending event with an earlier date than the current event.
@@ -72,6 +74,7 @@ public class EventStream
 
         if (stateChange.MaybeEvent != null) _maybeEvents.Add(stateChange.MaybeEvent);
 
+        _processedEvents.Add(ev);
         _historicalStates.Add((ev.Date, newState));
 
         return newState;
@@ -86,5 +89,10 @@ public class EventStream
                 return _historicalStates[i].State;
 
         return null;
+    }
+
+    public IEnumerable<EventBase> GetEventsUpToDate(DateTime date)
+    {
+        return _processedEvents.Where(e => e.Date <= date);
     }
 }
