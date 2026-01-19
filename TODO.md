@@ -11,6 +11,16 @@
         Date when the modification was made.
         Date of the event it applies to.
 
+    -> Apartment value.
+    -> Tax gains.
+        -> How do we split them by person.
+    -> Net cost of the loan.
+
+    -> Queries:
+        interest paid in a year.
+
+    -> Design for integration bugetel (much much later).
+
 
 # Blazor PWA maybe.
     -> to be able to easily deploy to phones.
