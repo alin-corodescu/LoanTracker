@@ -8,27 +8,60 @@ Then I can ask CC to implement the additinal features by referring the existing 
 
 Map user journeys to the layers and if possible, components.
 
+Bills:
+    Who paid what share: OneOf<Alin, Diana, ContComun>
+    Who should support the bill: Share<Alin, Diana, ContComun>
+
+    When an e
+
+
+Accounts:
+    Alin, Diana, Cont Comun.
+Balances:
+    Alin owes
 
 # Utilities:
-    Currency exchange at a specific date
+Currency exchange at a specific date
     
 ## Basic loan management.
 
 /add event editor with the right metadata captured (when the change was made, to which date does it pertain)
 /add Query for: interest paid in the last year?
 /add interest paid by each person
-/add utilitati.
+/add utilitati si alte costuri de apartament.
 
-### Utilitati:
--> Add a bill : Title, Value
--> Bill can be split between participants.
--> How does a bill get paid?
-    -> The bill is marked as paid.
-    -> Proxy accounts are updated with expected values.
-    -> Bill can retro-actively be updated by who paid a higher share.
-    -> Since last bugetel, Alin paid X in bills, Diana paid Y in bills. -- this is what the state could tell us.
-    -> Ce inseamna sa facem settlement la bugetel?
-        -> Acum, sa punem bani pe contul comun, si/sau sa ne dam bani intre noi.
+
+### Bills.
+-> Are inputs to the system.
+    -> can be categorized   
+    -> can be split between participants
+
+-> Output: 
+    how much each person should have contributed to cont comun.
+    
+    Cum facem noi settle?
+        Contributia mea e 2.3 luni peste Diana.
+        DAca punem 3 luni,
+            Put si eu 0.7
+            Pune diana 3 luni
+        Daca punem 2 luni,
+            Pune diana 2 luni.
+            Diana imi da 0.15 mie? -- cum modelez asta?
+        Surplus Alin:   
+            Contul comun datoreaza lui Alin 2.3 luni de bani.
+                => Diana ii datoreaza lui Alin 1.15 luni.
+            Diana trb sa puna 2 luni 
+                => Diana ii datoreaza contului comun 2 luni de bani 
+                => Diana transfer 2 luni contului comun (tx1)
+            Alin trb sa puna 2 luni
+                => datoria se reduce la 0.3 luni intre Alin si contul comun.
+                => Diana transfera lui Alin 0.15 luni.
+                    => Diana transfera la contul comun 0.15 luni.
+                    => contul comun ii da lui Alin 0.15
+                       => Acum Diana a pus 2.15, Alin a pus 2.15
+                        =>in contul comun sunt 2 luni de bani.
+                            => si nicio datorie. 
+
 
 ### Contul comun cum il modelez?
 Putem plati chestii de acolo, si e 50/50 ownership. (sau ma rog, ratio pe care il decidem).
@@ -46,49 +79,37 @@ Cheltuieli comune:
     -> Contul comun - cheltuieli non-comune accidentale din contul comun.
 
 Tag the bills.
-How to model the loan as a bill?
 
-# Bugetel:
-Import - draft (notez ca am platit eu X la supermarket), sau import pe bune.
+## Feature:
+Import - draft bill (notez ca am platit eu X la supermarket), sau import pe bune.
 ## Feature:
 Intrebi un agent cum sa faci ceva bazat pe user guide?
 
+## Feature:
+Deal with payments to/from other people (Andi intr-o excursie).
 
--> bonus q: how to deal with payements to/ from other people (e.g. Andi intr-o excursie sau similar)
+## Feature
+Support separate budgets (private, for each of us) that join for common stuff (e.g. apartament, cheltuieli comune).
 
-## Support separate budgets that join for common stuff (e.g. apartament, cheltuieli comune).
+## Feature:
+Tax simulation
+    Where money is going.
+        from salary
+        from stocks
+        vacation pay logic.
 
-## Tax simulation
-Where money is going.
-    from salary
-    from stocks
-    vacation pay logic.
+## Feature
+Stock selling events. Help with calculating the stock in a particular day.
 
-    Stock selling events. Help with calculating the stock in a particular day.
+# Feature
+Import payments into the stream
 
+# Feature
+Categorize payments and create views:
+    Excursii, Banii pe luna,
 
-## To define in code: Bugetel
-Experience to import payments into the stream.
+# Feature
+Pointers to other artifacts: factura la utilitati
 
-Experience to categorize the payments and create views.
-    -> Excursii
-    -> Bani pe luna.
-    -> Pivot 
-    
-    Vizualizari.
-
-## To Define in code: How to deal with temporary debt between the 2 users?
-    As in, if Alin covered more of the loan for a certain month
-        But we don't want to mark that as a larger payment towards his subloan
-        instead, we should mark that Diana owes Alin X (interest free etc.)
-
-    Alin's Proxy
-    Diana's Proxy
-
-    Good for bugetel tracking where we cover who paid for what.
-        With bills method. + categorization.
-
-## Integrate with a notes experience.
-
-## References to the outside world:
-    ex: factura la utilitati, broken down by ..
+# Feature 
+Notes like experience

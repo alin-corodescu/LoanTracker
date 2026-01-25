@@ -2,6 +2,10 @@ using LoanSplitter.Domain;
 
 namespace LoanSplitter.Events;
 
+/// <summary>
+/// Represents signing a new loan contract.
+/// Adds the Loan entity, creates sub-loans for each borrower, and schedules the first LoanPaymentEvent.
+/// </summary>
 public class LoanContractedEvent(
     DateTime date,
     string loanName,

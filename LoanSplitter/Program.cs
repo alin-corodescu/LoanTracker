@@ -1,3 +1,17 @@
+/// <summary>
+/// LoanSplitter API - ASP.NET Core minimal API that simulates event streams in memory.
+/// 
+/// Endpoints:
+/// - POST /eventStream - Accepts a JSON array of user events and returns a stream ID
+/// - GET /eventStream/{id}?date=YYYY-MM-DD - Returns immutable state snapshot at a specific date
+/// - GET /eventStream/{id}/loanSummary?date=YYYY-MM-DD&loanName=... - Returns computed loan summary
+/// - GET /eventStream/{id}/events?date=YYYY-MM-DD - Returns all events up to a specific date
+/// 
+/// States are stored purely in memory; restart the service to clear all streams.
+/// CORS is wide open for development so the static frontend can call the API without extra proxying.
+/// 
+/// Run locally: dotnet run --project LoanSplitter/LoanSplitter.csproj
+/// </summary>
 using System.Text.Json;
 using LoanSplitter.Api;
 using LoanSplitter.Domain;
@@ -33,6 +47,20 @@ app.UseCors(CorsPolicyName);
 
 app.MapGet("/", () => Results.Ok(new { message = "LoanSplitter API is running" }));
 
+/// <summary>
+/// POST /eventStream
+/// 
+/// Accepts a JSON array of user events that follows the schema handled by UserEventJsonDeserializer.
+/// Each object must contain a "type" discriminator, "date", and any type-specific fields.
+/// The server materializes the events into an EventStream, stores it in memory, and returns a unique identifier.
+/// 
+/// Example:
+/// curl -X POST "http://localhost:5000/eventStream" \
+///   -H "Content-Type: application/json" \
+///   -d '[{ "type": "AccountCreated", "date": "2025-06-01", "acctName": "creditAcct" }]'
+/// 
+/// Response: { "id": "f6c3f219-93b6-4035-a169-8bb2f1df002f" }
+/// </summary>
 app.MapPost("/eventStream", async Task<IResult> (
         HttpRequest request,
         UserEventJsonDeserializer deserializer,
@@ -62,6 +90,15 @@ app.MapPost("/eventStream", async Task<IResult> (
     .Produces(StatusCodes.Status201Created)
     .Produces(StatusCodes.Status400BadRequest);
 
+/// <summary>
+/// GET /eventStream/{id}?date=YYYY-MM-DD
+/// 
+/// Returns the immutable State snapshot produced by the stream on or before the requested date.
+/// If the stream or date can't be satisfied, returns 404.
+/// 
+/// Example:
+/// curl "http://localhost:5000/eventStream/f6c3f219-93b6-4035-a169-8bb2f1df002f?date=2026-06-01"
+/// </summary>
 app.MapGet("/eventStream/{eventStreamId:guid}",
         (Guid eventStreamId,
             [FromQuery(Name = "date")] DateTime? date,
@@ -83,6 +120,18 @@ app.MapGet("/eventStream/{eventStreamId:guid}",
     .Produces(StatusCodes.Status400BadRequest)
     .Produces(StatusCodes.Status404NotFound);
 
+/// <summary>
+/// GET /eventStream/{id}/loanSummary?date=YYYY-MM-DD&loanName=apartLoan
+/// 
+/// Returns a computed summary for a specific loan at the requested date, including:
+/// - Next payment split by person
+/// - Remaining principal and projected interest totals (both aggregated and per borrower)
+/// 
+/// This endpoint powers the frontend helper.
+/// 
+/// Example:
+/// curl "http://localhost:5000/eventStream/{id}/loanSummary?date=2026-06-01&loanName=apartLoan"
+/// </summary>
 app.MapGet("/eventStream/{eventStreamId:guid}/loanSummary",
         (Guid eventStreamId,
             [FromQuery(Name = "date")] DateTime? date,

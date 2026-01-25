@@ -2,6 +2,15 @@ using LoanSplitter.Domain;
 
 namespace LoanSplitter.Api;
 
+/// <summary>
+/// Projects a specific Loan entity into UX-friendly JSON for /eventStream/{id}/loanSummary.
+/// Provides computed summaries including:
+/// - Next payment total and per-person split
+/// - Remaining principal (aggregated and per borrower)
+/// - Projected interest remaining (aggregated and per borrower)
+/// 
+/// Must remain in sync with frontend expectations in LoanSplitter.Frontend/app.js.
+/// </summary>
 public sealed class LoanSummaryResponse
 {
     public string LoanName { get; init; } = string.Empty;

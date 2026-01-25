@@ -121,11 +121,22 @@ public class UserEventJsonDeserializerTest
             "apartLoan",
             5.25);
 
+        var billCreated = new BillCreatedEvent(
+            new DateTime(2025, 11, 15),
+            "groceries_november",
+            "November groceries",
+            new List<BillItem>
+            {
+                new BillItem(500.0, "Alin", "Groceries"),
+                new BillItem(300.0, "Diana", "Groceries")
+            },
+            "creditAcct");
+
         var serializer = new UserEventJsonDeserializer();
-        var json = serializer.Serialize(new List<EventBase> { advancePayment, correction, splitCorrection, rateChanged });
+        var json = serializer.Serialize(new List<EventBase> { advancePayment, correction, splitCorrection, rateChanged, billCreated });
         var roundTripped = serializer.Deserialize(json);
 
-        AssertCount(roundTripped, 4);
+        AssertCount(roundTripped, 5);
 
         var roundAdvance = (AdvancePaymentEvent)roundTripped[0];
         Assert.AreEqual(advancePayment.LoanName, roundAdvance.LoanName);
@@ -144,6 +155,15 @@ public class UserEventJsonDeserializerTest
         var roundRate = (InterestRateChangedEvent)roundTripped[3];
         Assert.AreEqual(rateChanged.LoanName, roundRate.LoanName);
         Assert.AreEqual(rateChanged.Rate, roundRate.Rate);
+
+        var roundBill = (BillCreatedEvent)roundTripped[4];
+        Assert.AreEqual(billCreated.BillName, roundBill.BillName);
+        Assert.AreEqual(billCreated.Description, roundBill.Description);
+        Assert.AreEqual(billCreated.AccountName, roundBill.AccountName);
+        Assert.AreEqual(2, roundBill.Items.Count);
+        Assert.AreEqual(500.0, roundBill.Items[0].Amount);
+        Assert.AreEqual("Alin", roundBill.Items[0].PersonName);
+        Assert.AreEqual("Groceries", roundBill.Items[0].Category);
     }
 
     private static void AssertCount<T>(ICollection<T> collection, int expected)

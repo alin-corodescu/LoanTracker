@@ -1,5 +1,15 @@
 namespace LoanSplitter.Events;
 
+/// <summary>
+/// Replays user events plus internally generated MaybeEvents to build immutable State snapshots.
+/// Orders events by date and interleaves user-provided events with automatically generated ones (such as scheduled payments).
+/// For each event:
+/// 1. Calls Apply(State) to produce an EventOutcome
+/// 2. Merges the returned StateUpdates into the previous state via state.WithUpdates(...), yielding a fresh immutable State
+/// 3. Queues any emitted MaybeEvent for future execution
+/// 
+/// The process is purely functional: no event mutates an existing State. Historical timelines remain reproducible.
+/// </summary>
 public class EventStream
 {
     private readonly List<(DateTime Date, State State)> _historicalStates;

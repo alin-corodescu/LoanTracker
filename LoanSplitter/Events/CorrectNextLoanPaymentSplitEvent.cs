@@ -4,6 +4,10 @@ using LoanSplitter.Domain;
 
 namespace LoanSplitter.Events;
 
+/// <summary>
+/// Temporarily changes how the next payment is divided between participants (useful when one person fronts more of a given installment).
+/// Stores normalized per-person contribution shares that are applied to the next LoanPaymentEvent, then discarded.
+/// </summary>
 public sealed class CorrectNextLoanPaymentSplitEvent : EventBase
 {
     public CorrectNextLoanPaymentSplitEvent(

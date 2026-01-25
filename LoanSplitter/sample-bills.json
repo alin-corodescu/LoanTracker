@@ -1,0 +1,80 @@
+[
+  {
+    "type": "AccountCreated",
+    "date": "2025-06-01",
+    "acctName": "creditAcct"
+  },
+  {
+    "type": "LoanContracted",
+    "date": "2025-10-15",
+    "loanName": "apartLoan",
+    "principal": 1000000,
+    "nominalRate": 4.5,
+    "term": 360,
+    "backingAccountName": "creditAcct",
+    "name1": "Alin",
+    "name2": "Diana"
+  },
+  {
+    "type": "BillCreated",
+    "date": "2025-11-05",
+    "billName": "groceries_november",
+    "description": "November grocery shopping",
+    "acctName": "creditAcct",
+    "items": [
+      {
+        "amount": 500.00,
+        "person": "Alin",
+        "category": "Groceries"
+      },
+      {
+        "amount": 300.00,
+        "person": "Diana",
+        "category": "Groceries"
+      }
+    ]
+  },
+  {
+    "type": "BillCreated",
+    "date": "2025-11-10",
+    "billName": "utilities_november",
+    "description": "November utilities",
+    "acctName": "creditAcct",
+    "items": [
+      {
+        "amount": 1200.00,
+        "person": "Alin",
+        "category": "Utilities"
+      },
+      {
+        "amount": 450.00,
+        "person": "Diana",
+        "category": "Internet"
+      }
+    ]
+  },
+  {
+    "type": "BillCreated",
+    "date": "2025-12-01",
+    "billName": "household_december",
+    "description": "December household expenses",
+    "acctName": "creditAcct",
+    "items": [
+      {
+        "amount": 650.00,
+        "person": "Alin",
+        "category": "Groceries"
+      },
+      {
+        "amount": 400.00,
+        "person": "Diana",
+        "category": "Groceries"
+      },
+      {
+        "amount": 200.00,
+        "person": "Alin",
+        "category": "Entertainment"
+      }
+    ]
+  }
+]

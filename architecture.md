@@ -1,23 +1,36 @@
 # Architecture document
+# Layers
+## Event editor layer
+In the event editor layer you write event streams. Once a stream is finalized, it is given to the event stream layer for processing.
 
-## Core principles
-The domain state is modelled as a series of events.
+The modifications in this layer are auditable.
 
-The state is immutable - instead, each event creates a new copy of the state when it is modified.
+### Feature: parallel universes.
 
-The events contain the logic of how the state must evolve upon the event taking place.
+## Event Stream layer
+Accepts a list of events as input to calculate intermediary states. The stream of events cannot be changed once processed.
 
-## Auditable modification
-Expanding on the immutability idea, the list of events itself that will make up a certain domain state is constructed as an append-only log of modifications brought to the events. 
+Events contain the logic of how the state must evolve.
 
-The modifications support:
-    Add
-    Delete
+### Feature: Events generating additional events
+Should inherit the tags from the original.
 
-## Parallel universes
-To begin with, parallel universes can be considered completely independent event streams.
+## State layer
+State objects are immutable. each event generates a new state. How is the state represented and what is captured?
 
-A layer on top should provide the functionality required to manage the independent event streams, including, but not limited to capturing data across universes (e.g. bringing in bulk changes from another universe)
+### Domain objects
+#### Loan
+Loan payment is modelled as a bill.
+#### Bill 
+Value
+Which Person paid it.
+Who did we pay it for.
+    Shares.
+Itemized
+Tags
 
-## Validation jobs
-Domain specific validation rules
+#### Person
+#### Account
+#### 
+
+### Domain validation rules

@@ -2,6 +2,10 @@ using LoanSplitter.Domain;
 
 namespace LoanSplitter.Events;
 
+/// <summary>
+/// Someone makes an extra principal payment outside the standard schedule.
+/// Temporarily stores an AccountTransaction inside the Loan until the next payment execution, at which point principal balances are reduced accordingly.
+/// </summary>
 public class AdvancePaymentEvent(DateTime date, string loanName, AccountTransaction transaction) : EventBase(date)
 {
     public string LoanName { get; } = loanName;

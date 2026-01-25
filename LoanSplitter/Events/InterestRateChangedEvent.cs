@@ -2,6 +2,10 @@ using LoanSplitter.Domain;
 
 namespace LoanSplitter.Events;
 
+/// <summary>
+/// Bank announces a future interest rate change.
+/// Marks the loan (and each sub-loan) with the upcoming rate so that, after the next payment, the new rate becomes active.
+/// </summary>
 public class InterestRateChangedEvent(DateTime date, string loanName, double rate)
     : EventBase(date)
 {

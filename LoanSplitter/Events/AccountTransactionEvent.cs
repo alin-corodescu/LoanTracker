@@ -2,6 +2,10 @@ using LoanSplitter.Domain;
 
 namespace LoanSplitter.Events;
 
+/// <summary>
+/// Record a manual deposit/withdrawal that is not part of the automated loan flow.
+/// Appends an AccountTransaction to the chosen Account.
+/// </summary>
 public class AccountTransactionEvent(DateTime date, string acctName, AccountTransaction transaction)
     : EventBase(date)
 {

@@ -107,6 +107,14 @@ public sealed class UserEventJsonDeserializer
                         GetRequiredString(root, "loanName"),
                         ReadAccountTransaction(root, "transaction")),
 
+                "BillCreated" or "billCreated" =>
+                    new BillCreatedEvent(
+                        date,
+                        GetRequiredString(root, "billName"),
+                        GetRequiredString(root, "description"),
+                        ReadBillItems(root, "items"),
+                        GetRequiredString(root, "acctName")),
+
                 "CorrectNextLoanPayment" or "correctNextLoanPayment" =>
                     new CorrectNextLoanPaymentEvent(
                         date,
@@ -166,6 +174,15 @@ public sealed class UserEventJsonDeserializer
                     writer.WriteString("acctName", accountTransaction.AccountName);
                     writer.WritePropertyName("transaction");
                     WriteAccountTransaction(writer, accountTransaction.Transaction);
+                    break;
+
+                case BillCreatedEvent billCreated:
+                    writer.WriteString("type", "BillCreated");
+                    writer.WriteString("billName", billCreated.BillName);
+                    writer.WriteString("description", billCreated.Description);
+                    writer.WriteString("acctName", billCreated.AccountName);
+                    writer.WritePropertyName("items");
+                    WriteBillItems(writer, billCreated.Items);
                     break;
 
                 case AdvancePaymentEvent advancePayment:
@@ -338,6 +355,68 @@ public sealed class UserEventJsonDeserializer
                 writer.WriteNumber(kvp.Key, kvp.Value);
 
             writer.WriteEndObject();
+        }
+
+        private static IReadOnlyList<BillItem> ReadBillItems(JsonElement obj, string propertyName)
+        {
+            if (!obj.TryGetProperty(propertyName, out var element))
+                throw new JsonException($"Missing required property '{propertyName}'.");
+
+            if (element.ValueKind != JsonValueKind.Array)
+                throw new JsonException($"Property '{propertyName}' must be an array.");
+
+            var items = new List<BillItem>();
+
+            foreach (var itemEl in element.EnumerateArray())
+            {
+                if (itemEl.ValueKind != JsonValueKind.Object)
+                    throw new JsonException("Each bill item must be an object.");
+
+                if (!itemEl.TryGetProperty("amount", out var amountEl))
+                    throw new JsonException("Bill item missing required property 'amount'.");
+
+                if (!itemEl.TryGetProperty("person", out var personEl))
+                    throw new JsonException("Bill item missing required property 'person'.");
+
+                if (!itemEl.TryGetProperty("category", out var categoryEl))
+                    throw new JsonException("Bill item missing required property 'category'.");
+
+                var amount = amountEl.ValueKind switch
+                {
+                    JsonValueKind.Number => amountEl.GetDouble(),
+                    JsonValueKind.String when double.TryParse(amountEl.GetString(), out var d) => d,
+                    _ => throw new JsonException("Bill item property 'amount' must be a number.")
+                };
+
+                if (personEl.ValueKind != JsonValueKind.String)
+                    throw new JsonException("Bill item property 'person' must be a string.");
+
+                if (categoryEl.ValueKind != JsonValueKind.String)
+                    throw new JsonException("Bill item property 'category' must be a string.");
+
+                items.Add(new BillItem(amount, personEl.GetString()!, categoryEl.GetString()!));
+            }
+
+            if (items.Count == 0)
+                throw new JsonException($"Property '{propertyName}' must contain at least one bill item.");
+
+            return items;
+        }
+
+        private static void WriteBillItems(Utf8JsonWriter writer, IReadOnlyList<BillItem> items)
+        {
+            writer.WriteStartArray();
+
+            foreach (var item in items)
+            {
+                writer.WriteStartObject();
+                writer.WriteNumber("amount", item.Amount);
+                writer.WriteString("person", item.PersonName);
+                writer.WriteString("category", item.Category);
+                writer.WriteEndObject();
+            }
+
+            writer.WriteEndArray();
         }
     }
 }

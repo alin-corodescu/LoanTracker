@@ -2,6 +2,12 @@ using LoanSplitter.Domain;
 
 namespace LoanSplitter.Events;
 
+/// <summary>
+/// Executes a scheduled monthly payment.
+/// Reads the current loan, splits the next payment between borrowers, creates a Bill with items for each participant (category "LoanPayment"),
+/// applies the bill to update the account via bill.ApplyToAccount(), reduces loan/sub-loan balances, accrues interest/fees,
+/// and schedules the next payment via a MaybeEvent.
+/// </summary>
 public class LoanPaymentEvent(DateTime date, string fromAccountName, string loanName)
     : EventBase(date)
 {
@@ -10,43 +16,35 @@ public class LoanPaymentEvent(DateTime date, string fromAccountName, string loan
 
     public override EventOutcome Apply(State state)
     {
-        // Payment from the staging account to the loan.
-        // the loan is also an account. But how do we keep track of whose money is it in the account?
-
-        // Begin transaction, Modify elements. Commit transaction.
-    var loan = state.GetEntityByName<Loan>(LoanName);
-
-        // The monthly amount, split by person.
+        var loan = state.GetEntityByName<Loan>(LoanName);
         var payments = loan.GetNextMonthlySplitPayment();
 
-        // Reduce the amount in the fromAccount with X for Alin, Y for Diana.
-    var updatedAccount = state.GetEntityByName<Account>(FromAccountName);
-
-        foreach (var payment in payments)
+        // Create bill items for each person's payment
+        var billItems = payments.Select(payment =>
         {
-            var transaction = new AccountTransaction(
-                payment.Value.Principal + payment.Value.Interest + payment.Value.Fee,
-                payment.Key);
+            var amount = payment.Value.Principal + payment.Value.Interest + payment.Value.Fee;
+            return new BillItem(amount, payment.Key, "LoanPayment");
+        }).ToList();
 
-            updatedAccount = updatedAccount.WithTransaction(transaction);
-        }
+        // Create the bill
+        var billName = $"{LoanName}_payment_{Date:yyyy-MM-dd}";
+        var bill = new Bill($"Loan payment for {LoanName}", billItems, Date);
 
-        // At this point, we need to internally execute the advance payments and interest changes for the next month.
+        // Apply the bill to update the account
+        var account = state.GetEntityByName<Account>(FromAccountName);
+        var updatedAccount = bill.ApplyToAccount(account);
+
+        // Execute the advance payments and interest changes for the next month
         var updatedLoan = loan.WithExecuteNextPayment();
 
         var updates = new Dictionary<string, object>
         {
-        { FromAccountName, updatedAccount },
-        { LoanName, updatedLoan }
+            { FromAccountName, updatedAccount },
+            { LoanName, updatedLoan },
+            { billName, bill }
         };
 
         var remainingTerm = updatedLoan.RemainingTermInMonths;
-
-        // Next month from the date of the event.
-        // End of the month
-
-        var firstOfThisMonth = new DateTime(Date.Year, Date.Month, 1);
-        var lastDayOfNextMonth = firstOfThisMonth.AddMonths(2).AddDays(-1);
 
         return new EventOutcome(updates, CreateNextPaymentMaybeEvent(Date, FromAccountName, LoanName, remainingTerm));
     }

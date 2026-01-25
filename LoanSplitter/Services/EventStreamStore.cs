@@ -5,6 +5,10 @@ using LoanSplitter.Events;
 
 namespace LoanSplitter.Services;
 
+/// <summary>
+/// In-memory catalog that keeps uploaded event streams accessible via the API.
+/// Caches streams keyed by GUID. No persistence - restart the service to clear all streams.
+/// </summary>
 public interface IEventStreamStore
 {
     Guid Add(IEnumerable<EventBase> events);
