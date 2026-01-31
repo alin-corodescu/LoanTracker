@@ -185,6 +185,40 @@ app.MapGet("/eventStream/{eventStreamId:guid}/events",
     .Produces(StatusCodes.Status400BadRequest)
     .Produces(StatusCodes.Status404NotFound);
 
+/// <summary>
+/// POST /eventStream/{id}/stateSnapshot
+/// 
+/// Returns the complete state at a specific point in time, grouped by entity types.
+/// Accepts a JSON body with a cutoffDate field.
+/// 
+/// Example:
+/// curl -X POST "http://localhost:5000/eventStream/{id}/stateSnapshot" \
+///   -H "Content-Type: application/json" \
+///   -d '{ "cutoffDate": "2026-06-01" }'
+/// 
+/// Response includes all loans, accounts, and bills present in the state at that date.
+/// </summary>
+app.MapPost("/eventStream/{eventStreamId:guid}/stateSnapshot",
+        (Guid eventStreamId,
+            StateSnapshotRequest request,
+            IEventStreamStore store) =>
+        {
+            if (!store.TryGet(eventStreamId, out var stream))
+                return Results.NotFound(new { error = $"Event stream '{eventStreamId}' was not found." });
+
+            var state = stream.GetStateForDate(request.CutoffDate);
+
+            if (state is null)
+                return Results.NotFound(new { error = $"No state available on or before {request.CutoffDate:O}." });
+
+            var response = StateSnapshotResponse.From(state, request.CutoffDate);
+            return Results.Ok(response);
+        })
+    .WithName("GetStateSnapshot")
+    .Produces<StateSnapshotResponse>(StatusCodes.Status200OK)
+    .Produces(StatusCodes.Status400BadRequest)
+    .Produces(StatusCodes.Status404NotFound);
+
 app.Run();
 
 public partial class Program

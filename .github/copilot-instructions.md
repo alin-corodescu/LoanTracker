@@ -12,9 +12,12 @@
 - **Documentation:** Implementation details, patterns, and conventions are documented directly in the C# code files via XML doc comments. Read the code.
 
 ## Frontend
-- **Tech stack:** Vanilla HTML/CSS/JavaScript (no framework or bundler)
+- **Tech stack:** React 18 + Vite + Tailwind CSS
 - **Key folders:**
-  - `LoanSplitter.Frontend/` - static files (index.html, styles.css, app.js)
+  - `LoanSplitter.Frontend.React/` - React application
+  - `LoanSplitter.Frontend.React/src/App.jsx` - Main component with all UI logic
+- **Run:** `npm run dev` (after `npm install`)
+- **Documentation:** Component logic and state management are documented in the React code itself
 
 ## Documentation philosophy
 - **High-level architecture and user flows:** Keep these in markdown files (`architecture.md`, `user-journeys.md`)

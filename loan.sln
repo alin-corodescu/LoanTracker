@@ -7,6 +7,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LoanSplitter", "LoanSplitte
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LoanSplitter.Tests", "LoanSplitter.Tests\LoanSplitter.Tests.csproj", "{5C3A52E3-2271-4DA0-83F4-95B037B45D59}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "LoanSplitter.Frontend.Blazor", "LoanSplitter.Frontend.Blazor", "{D10B11E4-0C6A-4CBD-ACBB-95BC226BDF88}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LoanSplitter.Frontend.Blazor", "LoanSplitter.Frontend.Blazor\LoanSplitter.Frontend.Blazor\LoanSplitter.Frontend.Blazor.csproj", "{E53C4D09-F8FD-4495-B2EF-015A991066D9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LoanSplitter.Frontend.Blazor.Client", "LoanSplitter.Frontend.Blazor\LoanSplitter.Frontend.Blazor.Client\LoanSplitter.Frontend.Blazor.Client.csproj", "{1E4D4BF7-775B-40E6-8C45-27C4DFFA05E0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,5 +30,17 @@ Global
 		{5C3A52E3-2271-4DA0-83F4-95B037B45D59}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5C3A52E3-2271-4DA0-83F4-95B037B45D59}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5C3A52E3-2271-4DA0-83F4-95B037B45D59}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E53C4D09-F8FD-4495-B2EF-015A991066D9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E53C4D09-F8FD-4495-B2EF-015A991066D9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E53C4D09-F8FD-4495-B2EF-015A991066D9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E53C4D09-F8FD-4495-B2EF-015A991066D9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1E4D4BF7-775B-40E6-8C45-27C4DFFA05E0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1E4D4BF7-775B-40E6-8C45-27C4DFFA05E0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1E4D4BF7-775B-40E6-8C45-27C4DFFA05E0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1E4D4BF7-775B-40E6-8C45-27C4DFFA05E0}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{E53C4D09-F8FD-4495-B2EF-015A991066D9} = {D10B11E4-0C6A-4CBD-ACBB-95BC226BDF88}
+		{1E4D4BF7-775B-40E6-8C45-27C4DFFA05E0} = {D10B11E4-0C6A-4CBD-ACBB-95BC226BDF88}
 	EndGlobalSection
 EndGlobal
