@@ -16,7 +16,6 @@ public class LoanPaymentEventTests
 
         var events = new List<EventBase>
         {
-            new AccountCreatedEvent(new DateTime(2025, 6, 1), acctName),
             new LoanContractedEvent(
                 new DateTime(2025, 11, 1),
                 loanName,
@@ -42,7 +41,6 @@ public class LoanPaymentEventTests
         
         Assert.IsNotNull(bill);
         Assert.AreEqual($"Loan payment for {loanName}", bill.Description);
-        Assert.AreEqual(new DateTime(2025, 12, 31), bill.Date);
         Assert.AreEqual(2, bill.Items.Count);
         
         // Verify bill items have the correct category
@@ -71,7 +69,6 @@ public class LoanPaymentEventTests
 
         var events = new List<EventBase>
         {
-            new AccountCreatedEvent(new DateTime(2025, 6, 1), acctName),
             new LoanContractedEvent(
                 new DateTime(2025, 11, 1),
                 loanName,

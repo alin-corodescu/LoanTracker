@@ -82,6 +82,17 @@ public class EventStream
         var stateChange = ev.Apply(state);
         var newState = state.WithUpdates(stateChange.StateUpdates);
 
+        // Process inline events immediately
+        if (stateChange.InlineEvents != null)
+        {
+            foreach (var inlineEvent in stateChange.InlineEvents)
+            {
+                var inlineOutcome = inlineEvent.Apply(newState);
+                newState = newState.WithUpdates(inlineOutcome.StateUpdates);
+                _processedEvents.Add(inlineEvent);
+            }
+        }
+
         if (stateChange.MaybeEvent != null) _maybeEvents.Add(stateChange.MaybeEvent);
 
         _processedEvents.Add(ev);

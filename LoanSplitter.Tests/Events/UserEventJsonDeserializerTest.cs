@@ -16,7 +16,6 @@ public class UserEventJsonDeserializerTest
     {
         var json = """
                    [
-                     { "type": "AccountCreated", "date": "2025-06-01", "acctName": "creditAcct" },
                      {
                        "type": "LoanContracted",
                        "date": "2025-11-01",
@@ -40,12 +39,11 @@ public class UserEventJsonDeserializerTest
         var deserializer = new UserEventJsonDeserializer();
         var events = deserializer.Deserialize(json);
 
-        AssertCount(events, 3);
-        Assert.IsInstanceOfType(events[0], typeof(AccountCreatedEvent));
-        Assert.IsInstanceOfType(events[1], typeof(LoanContractedEvent));
-        Assert.IsInstanceOfType(events[2], typeof(AdvancePaymentEvent));
+        AssertCount(events, 2);
+        Assert.IsInstanceOfType(events[0], typeof(LoanContractedEvent));
+        Assert.IsInstanceOfType(events[1], typeof(AdvancePaymentEvent));
 
-        Assert.AreEqual(new DateTime(2025, 6, 1), events[0].Date);
+        Assert.AreEqual(new DateTime(2025, 11, 1), events[0].Date);
     }
 
     [TestMethod]
@@ -74,7 +72,6 @@ public class UserEventJsonDeserializerTest
     {
         var events = new List<EventBase>
         {
-            new AccountCreatedEvent(new DateTime(2025, 6, 1), "creditAcct"),
             new LoanPaymentEvent(new DateTime(2025, 7, 1), "checking", "apartLoan")
         };
 
@@ -85,12 +82,10 @@ public class UserEventJsonDeserializerTest
         var root = doc.RootElement;
 
         Assert.AreEqual(JsonValueKind.Array, root.ValueKind);
-        Assert.AreEqual(2, root.GetArrayLength());
-        Assert.AreEqual("AccountCreated", root[0].GetProperty("type").GetString());
-        Assert.AreEqual("creditAcct", root[0].GetProperty("acctName").GetString());
-        Assert.AreEqual("LoanPayment", root[1].GetProperty("type").GetString());
-        Assert.AreEqual("checking", root[1].GetProperty("fromAccountName").GetString());
-        Assert.AreEqual("apartLoan", root[1].GetProperty("loanName").GetString());
+        Assert.AreEqual(1, root.GetArrayLength());
+        Assert.AreEqual("LoanPayment", root[0].GetProperty("type").GetString());
+        Assert.AreEqual("checking", root[0].GetProperty("fromAccountName").GetString());
+        Assert.AreEqual("apartLoan", root[0].GetProperty("loanName").GetString());
     }
 
     [TestMethod]
@@ -121,7 +116,7 @@ public class UserEventJsonDeserializerTest
             "apartLoan",
             5.25);
 
-        var billCreated = new BillCreatedEvent(
+        var billCreated = new BillAddedEvent(
             new DateTime(2025, 11, 15),
             "groceries_november",
             "November groceries",
@@ -130,7 +125,13 @@ public class UserEventJsonDeserializerTest
                 new BillItem(500.0, "Alin", "Groceries"),
                 new BillItem(300.0, "Diana", "Groceries")
             },
-            "creditAcct");
+            "creditAcct",
+            "creditAcct",
+            new Dictionary<string, double>
+            {
+                { "Alin", 0.625 },
+                { "Diana", 0.375 }
+            });
 
         var serializer = new UserEventJsonDeserializer();
         var json = serializer.Serialize(new List<EventBase> { advancePayment, correction, splitCorrection, rateChanged, billCreated });
@@ -156,7 +157,7 @@ public class UserEventJsonDeserializerTest
         Assert.AreEqual(rateChanged.LoanName, roundRate.LoanName);
         Assert.AreEqual(rateChanged.Rate, roundRate.Rate);
 
-        var roundBill = (BillCreatedEvent)roundTripped[4];
+        var roundBill = (BillAddedEvent)roundTripped[4];
         Assert.AreEqual(billCreated.BillName, roundBill.BillName);
         Assert.AreEqual(billCreated.Description, roundBill.Description);
         Assert.AreEqual(billCreated.AccountName, roundBill.AccountName);

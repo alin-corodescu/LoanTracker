@@ -9,7 +9,6 @@ namespace LoanSplitter.Events;
 ///
 /// Expected JSON shape (array):
 /// [
-///   { "type": "AccountCreated", "date": "2025-06-01", "acctName": "creditAcct" },
 ///   { "type": "LoanContracted", "date": "2025-11-01", "loanName": "apartLoan", ... }
 /// ]
 ///
@@ -92,9 +91,6 @@ public sealed class UserEventJsonDeserializer
             // Permit a few aliases to keep JSON friendly.
             return type switch
             {
-                "AccountCreated" or "accountCreated" =>
-                    new AccountCreatedEvent(date, GetRequiredString(root, "acctName")),
-
                 "AccountTransaction" or "accountTransaction" =>
                     new AccountTransactionEvent(
                         date,
@@ -108,12 +104,14 @@ public sealed class UserEventJsonDeserializer
                         ReadAccountTransaction(root, "transaction")),
 
                 "BillCreated" or "billCreated" =>
-                    new BillCreatedEvent(
+                    new BillAddedEvent(
                         date,
                         GetRequiredString(root, "billName"),
                         GetRequiredString(root, "description"),
                         ReadBillItems(root, "items"),
-                        GetRequiredString(root, "acctName")),
+                        GetRequiredString(root, "acctName"),
+                        GetRequiredString(root, "paidByAccount"),
+                        ReadAccountShares(root, "forAccounts")),
 
                 "CorrectNextLoanPayment" or "correctNextLoanPayment" =>
                     new CorrectNextLoanPaymentEvent(
@@ -164,11 +162,6 @@ public sealed class UserEventJsonDeserializer
 
             switch (value)
             {
-                case AccountCreatedEvent created:
-                    writer.WriteString("type", "AccountCreated");
-                    writer.WriteString("acctName", created.AccountName);
-                    break;
-
                 case AccountTransactionEvent accountTransaction:
                     writer.WriteString("type", "AccountTransaction");
                     writer.WriteString("acctName", accountTransaction.AccountName);
@@ -176,13 +169,28 @@ public sealed class UserEventJsonDeserializer
                     WriteAccountTransaction(writer, accountTransaction.Transaction);
                     break;
 
-                case BillCreatedEvent billCreated:
+                case BillAddedEvent billCreated:
                     writer.WriteString("type", "BillCreated");
                     writer.WriteString("billName", billCreated.BillName);
                     writer.WriteString("description", billCreated.Description);
                     writer.WriteString("acctName", billCreated.AccountName);
+                    writer.WriteString("paidByAccount", billCreated.PaidByAccount);
+                    writer.WritePropertyName("forAccounts");
+                    WriteAccountShares(writer, billCreated.ForAccountsWithShares);
                     writer.WritePropertyName("items");
                     WriteBillItems(writer, billCreated.Items);
+                    break;
+                
+                case BillCreatedEvent billCreatedInline:
+                    writer.WriteString("type", "BillCreatedInline");
+                    writer.WriteString("billName", billCreatedInline.BillName);
+                    writer.WriteString("acctName", billCreatedInline.AccountName);
+                    writer.WriteString("description", billCreatedInline.Bill.Description);
+                    writer.WriteString("paidByAccount", billCreatedInline.Bill.PaidByAccount);
+                    writer.WritePropertyName("forAccounts");
+                    WriteAccountShares(writer, billCreatedInline.Bill.ForAccountsWithShares);
+                    writer.WritePropertyName("items");
+                    WriteBillItems(writer, billCreatedInline.Bill.Items);
                     break;
 
                 case AdvancePaymentEvent advancePayment:
@@ -417,6 +425,44 @@ public sealed class UserEventJsonDeserializer
             }
 
             writer.WriteEndArray();
+        }
+
+        private static Dictionary<string, double> ReadAccountShares(JsonElement obj, string propertyName)
+        {
+            if (!obj.TryGetProperty(propertyName, out var element))
+                throw new JsonException($"Missing required property '{propertyName}'.");
+
+            if (element.ValueKind != JsonValueKind.Object)
+                throw new JsonException($"Property '{propertyName}' must be an object.");
+
+            var shares = new Dictionary<string, double>();
+
+            foreach (var property in element.EnumerateObject())
+            {
+                var value = property.Value.ValueKind switch
+                {
+                    JsonValueKind.Number => property.Value.GetDouble(),
+                    JsonValueKind.String when double.TryParse(property.Value.GetString(), out var d) => d,
+                    _ => throw new JsonException($"Share for '{property.Name}' must be a number.")
+                };
+
+                shares[property.Name] = value;
+            }
+
+            if (shares.Count == 0)
+                throw new JsonException($"Property '{propertyName}' must contain at least one account share.");
+
+            return shares;
+        }
+
+        private static void WriteAccountShares(Utf8JsonWriter writer, IReadOnlyDictionary<string, double> shares)
+        {
+            writer.WriteStartObject();
+
+            foreach (var kvp in shares)
+                writer.WriteNumber(kvp.Key, kvp.Value);
+
+            writer.WriteEndObject();
         }
     }
 }

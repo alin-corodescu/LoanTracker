@@ -19,7 +19,17 @@ public class State
     public T GetEntityByName<T>(string entityName)
     {
         if (!_entities.TryGetValue(entityName, out var entity))
+        {
+            // Auto-create Account entities on first reference
+            if (typeof(T) == typeof(Domain.Account))
+            {
+                var newAccount = new Domain.Account();
+                _entities[entityName] = newAccount;
+                return (T)(object)newAccount;
+            }
+            
             throw new KeyNotFoundException($"Entity '{entityName}' was not found in the current state.");
+        }
 
         return (T)entity;
     }

@@ -57,7 +57,7 @@ app.MapGet("/", () => Results.Ok(new { message = "LoanSplitter API is running" }
 /// Example:
 /// curl -X POST "http://localhost:5000/eventStream" \
 ///   -H "Content-Type: application/json" \
-///   -d '[{ "type": "AccountCreated", "date": "2025-06-01", "acctName": "creditAcct" }]'
+///   -d '[{ "type": "LoanContracted", "date": "2025-10-15", "loanName": "loan1", "principal": 100000, "nominalRate": 4.5, "term": 360, "backingAccountName": "creditAcct", "name1": "Alin", "name2": "Diana" }]'
 /// 
 /// Response: { "id": "f6c3f219-93b6-4035-a169-8bb2f1df002f" }
 /// </summary>

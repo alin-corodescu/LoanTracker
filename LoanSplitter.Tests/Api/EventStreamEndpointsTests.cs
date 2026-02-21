@@ -34,7 +34,6 @@ public sealed class EventStreamEndpointsTests
 
         const string newStreamPayload = """
 [
-  { "type": "AccountCreated", "date": "2025-06-01", "acctName": "creditAcct" },
   {
     "type": "LoanContracted",
     "date": "2025-11-01",
@@ -98,7 +97,6 @@ public sealed class EventStreamEndpointsTests
 
         const string newStreamPayload = """
 [
-  { "type": "AccountCreated", "date": "2025-06-01", "acctName": "creditAcct" },
   {
     "type": "LoanContracted",
     "date": "2025-11-01",
@@ -130,7 +128,7 @@ public sealed class EventStreamEndpointsTests
 
         Assert.AreEqual(JsonValueKind.Array, root.ValueKind);
         
-        // Should have AccountCreated, LoanContracted, and at least one LoanPayment (system generated)
+        // Should have LoanContracted and at least one LoanPayment (system generated)
         var eventTypes = new List<string>();
         foreach (var element in root.EnumerateArray())
         {
@@ -140,7 +138,6 @@ public sealed class EventStreamEndpointsTests
             }
         }
 
-        CollectionAssert.Contains(eventTypes, "AccountCreated");
         CollectionAssert.Contains(eventTypes, "LoanContracted");
         CollectionAssert.Contains(eventTypes, "LoanPayment", "Should contain system-generated LoanPayment events");
     }

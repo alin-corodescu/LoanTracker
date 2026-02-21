@@ -81,7 +81,8 @@ Cheltuieli comune:
 Tag the bills.
 
 ## Feature:
-Import - draft bill (notez ca am platit eu X la supermarket), sau import pe bune.
+Import - draft bill (notez ca am platit eu X la supermarket),  import pe bune comes at a later time.
+
 ## Feature:
 Intrebi un agent cum sa faci ceva bazat pe user guide?
 

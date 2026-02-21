@@ -1,25 +1,10 @@
-# LoanTracker AI Guide
+# High level guidelines
 
-## Backend
-- **Tech stack:** ASP.NET Core minimal API, C# 12
-- **Key folders:**
-  - `LoanSplitter/Domain/` - domain models (Loan, Account, Bill, State)
-  - `LoanSplitter/Events/` - event sourcing logic (EventBase subclasses, EventStream, deserializers)
-  - `LoanSplitter/Api/` - read models and DTOs
-  - `LoanSplitter/Services/` - infrastructure (EventStreamStore)
-  - `LoanSplitter/Program.cs` - API endpoint definitions and DI setup
-  - `LoanSplitter.Tests/` - MSTest unit tests
-- **Documentation:** Implementation details, patterns, and conventions are documented directly in the C# code files via XML doc comments. Read the code.
+-> This repo contains the code for a personal project that I am building as a finance tracker. Being a personal project, it is mostly a playground for me to experiment with different ideas.
 
-## Frontend
-- **Tech stack:** React 18 + Vite + Tailwind CSS
-- **Key folders:**
-  - `LoanSplitter.Frontend.React/` - React application
-  - `LoanSplitter.Frontend.React/src/App.jsx` - Main component with all UI logic
-- **Run:** `npm run dev` (after `npm install`)
-- **Documentation:** Component logic and state management are documented in the React code itself
+-> The overarching idea of how the logic is modelled is inspired from event sourcing patterns, where the state of the system is derived from a series of events. 
 
-## Documentation philosophy
-- **High-level architecture and user flows:** Keep these in markdown files (`architecture.md`, `user-journeys.md`)
-- **Implementation details:** Document in the appropriate code files themselves via comments, XML doc comments, or class/method summaries
-- When making changes, update markdown files only if architecture or user flows change; update code comments for implementation details
+-> I am using markdown files as brain dumps for architectural decisions and user journeys, but they are not very polished.
+
+-> You as copilot should not create/ modify more markdown files unless specifically prompted. If anything needs to be documented, do so in the code.
+

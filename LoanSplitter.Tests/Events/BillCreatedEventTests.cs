@@ -22,12 +22,20 @@ public class BillCreatedEventTests
             new BillItem(300.0, "Diana", "Groceries")
         };
 
-        var billEvent = new BillCreatedEvent(
+        var forAccounts = new Dictionary<string, double>
+        {
+            { "Alin", 0.625 },  // 500 / 800
+            { "Diana", 0.375 }  // 300 / 800
+        };
+
+        var billEvent = new BillAddedEvent(
             new DateTime(2025, 11, 1),
             "groceries_november",
             "November groceries",
             billItems,
-            "creditAcct"
+            "creditAcct",
+            "creditAcct",
+            forAccounts
         );
 
         // Act
@@ -42,7 +50,6 @@ public class BillCreatedEventTests
         var bill = newState.GetEntityByName<Bill>("groceries_november");
         Assert.IsNotNull(bill);
         Assert.AreEqual("November groceries", bill.Description);
-        Assert.AreEqual(new DateTime(2025, 11, 1), bill.Date);
         Assert.AreEqual(2, bill.Items.Count);
         Assert.AreEqual(800.0, bill.TotalAmount);
 
@@ -80,12 +87,20 @@ public class BillCreatedEventTests
             new BillItem(650.0, "Alin", "Groceries")
         };
 
-        var billEvent = new BillCreatedEvent(
+        var forAccounts = new Dictionary<string, double>
+        {
+            { "Alin", 0.804348 },  // (1200 + 650) / 2300
+            { "Diana", 0.195652 }  // 450 / 2300
+        };
+
+        var billEvent = new BillAddedEvent(
             new DateTime(2025, 12, 1),
             "household_december",
             "December household expenses",
             billItems,
-            "creditAcct"
+            "creditAcct",
+            "creditAcct",
+            forAccounts
         );
 
         // Act
@@ -116,10 +131,10 @@ public class BillCreatedEventTests
         // Act
         var bill = Bill.CreateSplitBill(
             "Utilities December",
-            new DateTime(2025, 12, 1),
             "Utilities",
             1000.0,
-            shares
+            shares,
+            "creditAcct"
         );
 
         // Assert
@@ -146,7 +161,12 @@ public class BillCreatedEventTests
             new BillItem(500.0, "Alin", "Groceries"),
             new BillItem(300.0, "Diana", "Groceries")
         };
-        var bill = new Bill("Groceries", billItems, new DateTime(2025, 11, 1));
+        var forAccounts = new Dictionary<string, double>
+        {
+            { "Alin", 0.625 },
+            { "Diana", 0.375 }
+        };
+        var bill = new Bill("Groceries", billItems, "creditAcct", forAccounts);
 
         // Act
         var updatedAccount = bill.ApplyToAccount(account);
@@ -174,16 +194,43 @@ public class BillCreatedEventTests
         {
             Bill.CreateSplitBill(
                 "Utilities",
-                new DateTime(2025, 12, 1),
                 "Utilities",
                 1000.0,
-                shares
+                shares,
+                "creditAcct"
             );
             Assert.Fail("Expected ArgumentException was not thrown.");
         }
         catch (ArgumentException ex)
         {
-            Assert.IsTrue(ex.Message.Contains("Shares must sum to 1.0"));
+            Assert.IsTrue(ex.Message.Contains("sum to 1.0"));
         }
+    }
+
+    [TestMethod]
+    public void Bill_WithoutItems_ShouldCreateTransactionsFromShares()
+    {
+        // Arrange
+        var account = new Account();
+        var shares = new Dictionary<string, double>
+        {
+            { "Alin", 0.6 },
+            { "Diana", 0.4 }
+        };
+        
+        // Create bill without itemization
+        var bill = new Bill("Restaurant bill", 1000.0, "creditAcct", shares);
+
+        // Act
+        var updatedAccount = bill.ApplyToAccount(account);
+
+        // Assert
+        Assert.AreEqual(2, updatedAccount.Transactions.Count);
+        Assert.AreEqual(600.0, updatedAccount.Transactions[0].Amount);
+        Assert.AreEqual("Alin", updatedAccount.Transactions[0].PersonName);
+        Assert.AreEqual(400.0, updatedAccount.Transactions[1].Amount);
+        Assert.AreEqual("Diana", updatedAccount.Transactions[1].PersonName);
+        Assert.AreEqual(1000.0, bill.TotalAmount);
+        Assert.AreEqual(0, bill.Items.Count);
     }
 }

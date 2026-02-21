@@ -12,12 +12,8 @@ public class EventStreamTest
     [TestMethod]
     public void HelloWorld()
     {
-        const string acctName = "creditAcct";
-
         var events = new List<EventBase>
         {
-            new AccountCreatedEvent(new DateTime(2025, 6, 1), acctName),
-
             new LoanContractedEvent(
                 new DateTime(2025,
                     11,

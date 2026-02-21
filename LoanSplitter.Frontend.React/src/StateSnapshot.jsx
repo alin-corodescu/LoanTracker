@@ -8,12 +8,17 @@ const currencyFormatter = new Intl.NumberFormat(undefined, {
   maximumFractionDigits: 2,
 });
 
-function StateSnapshot() {
-  const [currentStreamId, setCurrentStreamId] = useState(null);
+function StateSnapshot({ initialStreamId, onStreamIdChange }) {
+  const [currentStreamId, setCurrentStreamId] = useState(initialStreamId);
   const [cutoffDate, setCutoffDate] = useState(new Date().toISOString().split('T')[0]);
   const [uploadStatus, setUploadStatus] = useState({ message: '', type: '' });
   const [snapshotStatus, setSnapshotStatus] = useState({ message: '', type: '' });
   const [stateSnapshot, setStateSnapshot] = useState(null);
+
+  const updateStreamId = (id) => {
+    setCurrentStreamId(id);
+    onStreamIdChange?.(id);
+  };
 
   const handleFileUpload = async (e) => {
     e.preventDefault();
@@ -43,11 +48,11 @@ function StateSnapshot() {
         throw new Error(payload?.error ?? 'Upload failed.');
       }
 
-      setCurrentStreamId(payload.id);
+      updateStreamId(payload.id);
       setUploadStatus({ message: 'Event stream created successfully!', type: 'success' });
     } catch (error) {
       setUploadStatus({ message: error.message ?? 'An unexpected error occurred.', type: 'error' });
-      setCurrentStreamId(null);
+      updateStreamId(null);
     }
   };
 
@@ -98,16 +103,19 @@ function StateSnapshot() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-12 space-y-6">
-      <header className="mb-8">
-        <h1 className="text-4xl font-bold mb-2">State Snapshot Viewer</h1>
-        <p className="text-slate-300">
-          Upload your event JSON and view the complete state at any point in time.
-        </p>
-      </header>
+    <div className="space-y-6">
+      {currentStreamId && (
+        <div className="bg-emerald-900/20 border border-emerald-700/50 rounded-xl p-4">
+          <p className="text-sm font-mono text-emerald-300">
+            Active Stream ID: {currentStreamId}
+          </p>
+        </div>
+      )}
 
       <section className="bg-slate-900/80 border border-slate-700/50 rounded-2xl p-6 shadow-2xl">
-        <h2 className="text-xl font-semibold mb-4 tracking-wide">1. Upload events</h2>
+        <h2 className="text-xl font-semibold mb-4 tracking-wide">
+          {currentStreamId ? 'Or upload a different event stream' : '1. Upload events'}
+        </h2>
         <form onSubmit={handleFileUpload} className="space-y-4">
           <div>
             <label className="block text-sm font-semibold mb-2">Event JSON file</label>
@@ -142,7 +150,9 @@ function StateSnapshot() {
       </section>
 
       <section className="bg-slate-900/80 border border-slate-700/50 rounded-2xl p-6 shadow-2xl">
-        <h2 className="text-xl font-semibold mb-4 tracking-wide">2. Pick cutoff date</h2>
+        <h2 className="text-xl font-semibold mb-4 tracking-wide">
+          {currentStreamId ? 'Pick cutoff date' : '2. Pick cutoff date'}
+        </h2>
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-semibold mb-2">Cutoff date</label>

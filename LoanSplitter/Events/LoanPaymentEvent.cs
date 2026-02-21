@@ -4,9 +4,9 @@ namespace LoanSplitter.Events;
 
 /// <summary>
 /// Executes a scheduled monthly payment.
-/// Reads the current loan, splits the next payment between borrowers, creates a Bill with items for each participant (category "LoanPayment"),
-/// applies the bill to update the account via bill.ApplyToAccount(), reduces loan/sub-loan balances, accrues interest/fees,
-/// and schedules the next payment via a MaybeEvent.
+/// Reads the current loan, splits the next payment between borrowers, creates a BillCreatedEvent to track the payment,
+/// reduces loan/sub-loan balances, accrues interest/fees, and schedules the next payment via a MaybeEvent.
+/// The BillCreatedEvent is processed inline to update the account and create the bill entity.
 /// </summary>
 public class LoanPaymentEvent(DateTime date, string fromAccountName, string loanName)
     : EventBase(date)
@@ -26,27 +26,32 @@ public class LoanPaymentEvent(DateTime date, string fromAccountName, string loan
             return new BillItem(amount, payment.Key, "LoanPayment");
         }).ToList();
 
-        // Create the bill
+        // Create the bill with share information
         var billName = $"{LoanName}_payment_{Date:yyyy-MM-dd}";
-        var bill = new Bill($"Loan payment for {LoanName}", billItems, Date);
-
-        // Apply the bill to update the account
-        var account = state.GetEntityByName<Account>(FromAccountName);
-        var updatedAccount = bill.ApplyToAccount(account);
+        var shares = payments.ToDictionary(
+            p => p.Key,
+            p => (double)((p.Value.Principal + p.Value.Interest + p.Value.Fee) / billItems.Sum(bi => bi.Amount))
+        );
+        var bill = new Bill($"Loan payment for {LoanName}", billItems, FromAccountName, shares);
 
         // Execute the advance payments and interest changes for the next month
         var updatedLoan = loan.WithExecuteNextPayment();
 
         var updates = new Dictionary<string, object>
         {
-            { FromAccountName, updatedAccount },
-            { LoanName, updatedLoan },
-            { billName, bill }
+            { LoanName, updatedLoan }
         };
 
         var remainingTerm = updatedLoan.RemainingTermInMonths;
 
-        return new EventOutcome(updates, CreateNextPaymentMaybeEvent(Date, FromAccountName, LoanName, remainingTerm));
+        // Create the BillCreatedEvent to be processed inline
+        var billCreatedEvent = new BillCreatedEvent(Date, billName, FromAccountName, bill);
+
+        return new EventOutcome(
+            updates, 
+            CreateNextPaymentMaybeEvent(Date, FromAccountName, LoanName, remainingTerm),
+            new List<EventBase> { billCreatedEvent }
+        );
     }
 
     public static MaybeEvent CreateNextPaymentMaybeEvent(DateTime eventTime, string fromAccountName, string loanName,

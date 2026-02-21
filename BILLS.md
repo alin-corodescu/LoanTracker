@@ -181,11 +181,6 @@ Possible future improvements:
 ```json
 [
   {
-    "type": "AccountCreated",
-    "date": "2025-06-01",
-    "acctName": "creditAcct"
-  },
-  {
     "type": "LoanContracted",
     "date": "2025-10-15",
     "loanName": "apartLoan",
