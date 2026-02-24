@@ -4,9 +4,8 @@ namespace LoanSplitter.Events;
 
 /// <summary>
 /// Executes a scheduled monthly payment.
-/// Reads the current loan, splits the next payment between borrowers, creates a BillCreatedEvent to track the payment,
+/// Reads the current loan, splits the next payment between borrowers, creates a bill to track the payment,
 /// reduces loan/sub-loan balances, accrues interest/fees, and schedules the next payment via a MaybeEvent.
-/// The BillCreatedEvent is processed inline to update the account and create the bill entity.
 /// </summary>
 public class LoanPaymentEvent(DateTime date, string fromAccountName, string loanName)
     : EventBase(date)
@@ -37,20 +36,14 @@ public class LoanPaymentEvent(DateTime date, string fromAccountName, string loan
         // Execute the advance payments and interest changes for the next month
         var updatedLoan = loan.WithExecuteNextPayment();
 
-        var updates = new Dictionary<string, object>
+        var updates = new Dictionary<string, object>(BillCreatedEvent.ComputeStateUpdates(state, billName, bill))
         {
             { LoanName, updatedLoan }
         };
 
-        var remainingTerm = updatedLoan.RemainingTermInMonths;
-
-        // Create the BillCreatedEvent to be processed inline
-        var billCreatedEvent = new BillCreatedEvent(Date, billName, FromAccountName, bill);
-
         return new EventOutcome(
-            updates, 
-            CreateNextPaymentMaybeEvent(Date, FromAccountName, LoanName, remainingTerm),
-            new List<EventBase> { billCreatedEvent }
+            updates,
+            CreateNextPaymentMaybeEvent(Date, FromAccountName, LoanName, updatedLoan.RemainingTermInMonths)
         );
     }
 

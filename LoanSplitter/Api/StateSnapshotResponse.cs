@@ -12,6 +12,7 @@ public sealed class StateSnapshotResponse
     public Dictionary<string, Loan> Loans { get; init; } = new();
     public Dictionary<string, Account> Accounts { get; init; } = new();
     public Dictionary<string, Bill> Bills { get; init; } = new();
+    public PersonBalances? Balances { get; set; }
     public DateTime SnapshotDate { get; init; }
 
     public static StateSnapshotResponse From(Events.State state, DateTime snapshotDate)
@@ -35,6 +36,9 @@ public sealed class StateSnapshotResponse
                     break;
                 case Bill bill:
                     response.Bills[name] = bill;
+                    break;
+                case PersonBalances balances when name == PersonBalances.StateKey:
+                    response.Balances = balances;
                     break;
             }
         }

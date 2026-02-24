@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using LoanSplitter.Domain;
 
 namespace LoanSplitter.Events;
 
@@ -21,11 +22,19 @@ public class State
         if (!_entities.TryGetValue(entityName, out var entity))
         {
             // Auto-create Account entities on first reference
-            if (typeof(T) == typeof(Domain.Account))
+            if (typeof(T) == typeof(Account))
             {
-                var newAccount = new Domain.Account();
+                var newAccount = new Account();
                 _entities[entityName] = newAccount;
                 return (T)(object)newAccount;
+            }
+
+            // Auto-create PersonBalances on first reference
+            if (typeof(T) == typeof(PersonBalances))
+            {
+                var newBalances = new PersonBalances();
+                _entities[entityName] = newBalances;
+                return (T)(object)newBalances;
             }
             
             throw new KeyNotFoundException($"Entity '{entityName}' was not found in the current state.");

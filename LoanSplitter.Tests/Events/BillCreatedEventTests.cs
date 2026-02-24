@@ -8,13 +8,10 @@ namespace LoanSplitter.Tests.Events;
 public class BillCreatedEventTests
 {
     [TestMethod]
-    public void BillCreatedEvent_ShouldCreateBillAndUpdateAccount()
+    public void BillCreatedEvent_ShouldCreateBillAndUpdateBalances()
     {
         // Arrange
-        var initialState = new State(new Dictionary<string, object>
-        {
-            { "creditAcct", new Account() }
-        });
+        var initialState = new State(new Dictionary<string, object>());
 
         var billItems = new List<BillItem>
         {
@@ -62,13 +59,14 @@ public class BillCreatedEventTests
         Assert.AreEqual("Diana", bill.Items[1].PersonName);
         Assert.AreEqual("Groceries", bill.Items[1].Category);
 
-        // Check account was updated
+        // Check balances were updated: both Alin and Diana owe creditAcct
+        var balances = newState.GetEntityByName<PersonBalances>(PersonBalances.StateKey);
+        Assert.AreEqual(500.0, balances.Balances["Alin"]["creditAcct"]);
+        Assert.AreEqual(300.0, balances.Balances["Diana"]["creditAcct"]);
+
+        // Account should NOT have transactions (bills no longer create account transactions)
         var account = newState.GetEntityByName<Account>("creditAcct");
-        Assert.AreEqual(2, account.Transactions.Count);
-        Assert.AreEqual(500.0, account.Transactions[0].Amount);
-        Assert.AreEqual("Alin", account.Transactions[0].PersonName);
-        Assert.AreEqual(300.0, account.Transactions[1].Amount);
-        Assert.AreEqual("Diana", account.Transactions[1].PersonName);
+        Assert.AreEqual(0, account.Transactions.Count);
     }
 
     [TestMethod]

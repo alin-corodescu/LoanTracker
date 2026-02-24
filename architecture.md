@@ -21,14 +21,28 @@ State objects are immutable. each event generates a new state. How is the state 
 ## Domain objects
 
 ## Bill 
-Amount
-
-Which Person paid it.
+Amount.
+Who paid for it
 Who did we pay it for -> between accounts Shares.
 Itemized
+    Name, amount.
 Tags
 
-#### Loan
+## Balances
+How much each person owes this other person. 
+    => Sum of all bills btween A, B. // so I don't really need a state for that.
+        it can be calculated at query time.
+## Loan
+Loan state makes sense to be materialized.
+    => Next payment.
+    => Overrides for
+
+    State is more of a cache. between bills, transactions and events.
+
+        => simplifies the calculation.
+        => calculate ahead of time.
+            The state at a certain time.
+        => calculate at query time.
 Loan payment is modelled as a bill.
 
 
@@ -81,6 +95,9 @@ Event Stream:
 
 Materialized state layer:
     Loan state.
+        TotalInterestPaid - query the bill items with a certain tag.
+
+
     Accounts.
     Balances.
         Alin owes Diana X.
@@ -104,3 +121,37 @@ Functional:
 How do I model a bill that is split amongst 2 people?
     Only one person/ comm account is paying.
     The rest are settled via transactions.
+
+Bills and transactions are the core.
+
+State around them:
+    Loan.
+    Balances.
+
+Events:
+    Loan Events.
+    Override events (e.g. set balance to 0)
+
+Event editor:
+
+
+/// Queries:
+
+Next payment, for a given date.
+    -> From the loan state at that date.
+
+Interest Paid thus far.
+    from persistence: 
+        All Biills from the loan, with timestamp < given date.
+
+Remaining principals, per person:
+    At a given state.
+        Recent events:
+            advance payment - is it a bill or just an event?
+                Needs to be a bill for tracking purposes.
+                
+                Maybe acct transactions are also bills?
+                    Alin paid Diana 100Eur, on behalf of Alin. 
+                    Person, ACcount difference.
+                        One person owns multiple accounts.
+                        Balances are between Personss? but how do you deal with cont comun then?

@@ -69,6 +69,24 @@ public class Bill
         return new Bill(description, items, paidByAccount, shares);
     }
 
+    /// <summary>
+    /// Computes the debts this bill creates: each person in ForAccountsWithShares (except PaidByAccount) owes PaidByAccount their share.
+    /// </summary>
+    public IEnumerable<(string Debtor, string Creditor, double Amount)> ComputeDebts()
+    {
+        if (_items.Count > 0)
+        {
+            return _items
+                .Where(i => i.PersonName != PaidByAccount)
+                .GroupBy(i => i.PersonName)
+                .Select(g => (Debtor: g.Key, Creditor: PaidByAccount, Amount: g.Sum(i => i.Amount)));
+        }
+
+        return _forAccountsWithShares
+            .Where(s => s.Key != PaidByAccount)
+            .Select(s => (Debtor: s.Key, Creditor: PaidByAccount, Amount: TotalAmount * s.Value));
+    }
+
     public Account ApplyToAccount(Account account)
     {
         if (account == null)
