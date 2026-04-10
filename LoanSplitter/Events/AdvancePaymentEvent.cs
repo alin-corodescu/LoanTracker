@@ -18,11 +18,13 @@ public class AdvancePaymentEvent(DateTime date, string loanName, AccountTransact
         var updatedLoan = loan.WithAdvancePayment(Transaction);
 
         var billName = $"{LoanName}_advance_{Date:yyyy-MM-dd}_{Transaction.PersonName}";
+        var billItems = new List<BillItem> { new(Transaction.Amount, Transaction.PersonName, "AdvancePayment") };
         var bill = new Bill(
             $"Advance payment for {LoanName}",
-            new List<BillItem> { new(Transaction.Amount, Transaction.PersonName, "AdvancePayment") },
+            billItems.Sum(i => i.Amount),
             Transaction.PersonName,
-            new Dictionary<string, double> { { Transaction.PersonName, 1.0 } }
+            new Dictionary<string, double> { { Transaction.PersonName, 1.0 } },
+            billItems
         );
 
         var updates = new Dictionary<string, object>(BillCreatedEvent.ComputeStateUpdates(state, billName, bill))

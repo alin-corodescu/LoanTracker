@@ -4,7 +4,7 @@ namespace LoanSplitter.Events;
 
 /// <summary>
 /// Create a bill to track expenditures for participants. Can be used for any type of spending (groceries, utilities, loan payments, etc.).
-/// Stores the Bill entity in state and updates the shared PersonBalances so that each participant who did not pay
+/// Stores the Bill entity in state and updates the shared AccountBalances so that each participant who did not pay
 /// records a debt to the payer for their share of the bill.
 /// </summary>
 public class BillCreatedEvent(DateTime date, string billName, string accountName, Bill bill)
@@ -19,12 +19,12 @@ public class BillCreatedEvent(DateTime date, string billName, string accountName
         => new(ComputeStateUpdates(state, BillName, Bill));
 
     /// <summary>
-    /// Computes the state updates for adding a bill: stores the bill entity and updates PersonBalances with the resulting debts.
+    /// Computes the state updates for adding a bill: stores the bill entity and updates AccountBalances with the resulting debts.
     /// Use this to apply bill side-effects directly from other events without creating an inline BillCreatedEvent.
     /// </summary>
     public static Dictionary<string, object> ComputeStateUpdates(State state, string billName, Bill bill)
     {
-        var balances = state.GetEntityByName<PersonBalances>(PersonBalances.StateKey);
+        var balances = state.GetEntityByName<AccountBalances>(AccountBalances.StateKey);
         var updatedBalances = balances;
         foreach (var (debtor, creditor, amount) in bill.ComputeDebts())
             updatedBalances = updatedBalances.WithDebt(debtor, creditor, amount);
@@ -32,14 +32,14 @@ public class BillCreatedEvent(DateTime date, string billName, string accountName
         return new Dictionary<string, object>
         {
             { billName, bill },
-            { PersonBalances.StateKey, updatedBalances }
+            { AccountBalances.StateKey, updatedBalances }
         };
     }
 }
 
 /// <summary>
 /// Legacy event for backwards compatibility. Creates a bill from individual parameters.
-/// Stores the Bill entity in state and updates PersonBalances with debts derived from the bill's shares.
+/// Stores the Bill entity in state and updates AccountBalances with debts derived from the bill's shares.
 /// </summary>
 public class BillAddedEvent : EventBase
 {
@@ -67,9 +67,9 @@ public class BillAddedEvent : EventBase
 
     public override EventOutcome Apply(State state)
     {
-        var bill = new Bill(Description, Items, PaidByAccount, new Dictionary<string, double>(ForAccountsWithShares));
+        var bill = new Bill(Description, Items.Sum(i => i.Amount), PaidByAccount, new Dictionary<string, double>(ForAccountsWithShares), Items);
 
-        var balances = state.GetEntityByName<PersonBalances>(PersonBalances.StateKey);
+        var balances = state.GetEntityByName<AccountBalances>(AccountBalances.StateKey);
         var updatedBalances = balances;
         foreach (var (debtor, creditor, amount) in bill.ComputeDebts())
             updatedBalances = updatedBalances.WithDebt(debtor, creditor, amount);
@@ -77,7 +77,7 @@ public class BillAddedEvent : EventBase
         return new EventOutcome(new Dictionary<string, object>
         {
             { BillName, bill },
-            { PersonBalances.StateKey, updatedBalances }
+            { AccountBalances.StateKey, updatedBalances }
         });
     }
 }

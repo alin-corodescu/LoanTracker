@@ -31,7 +31,7 @@ public class LoanPaymentEvent(DateTime date, string fromAccountName, string loan
             p => p.Key,
             p => (double)((p.Value.Principal + p.Value.Interest + p.Value.Fee) / billItems.Sum(bi => bi.Amount))
         );
-        var bill = new Bill($"Loan payment for {LoanName}", billItems, FromAccountName, shares);
+        var bill = new Bill($"Loan payment for {LoanName}", billItems.Sum(bi => bi.Amount), FromAccountName, shares, billItems);
 
         // Execute the advance payments and interest changes for the next month
         var updatedLoan = loan.WithExecuteNextPayment();

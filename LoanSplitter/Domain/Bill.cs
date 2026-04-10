@@ -8,41 +8,17 @@ public class Bill
     private readonly List<BillItem> _items;
     private readonly Dictionary<string, double> _forAccountsWithShares;
     
-    /// <summary>
-    /// Creates a bill with detailed itemization.
-    /// </summary>
-    public Bill(string description, IEnumerable<BillItem> items, string paidByAccount, Dictionary<string, double> forAccountsWithShares)
+    public Bill(string description, double totalAmount, string paidByAccount, Dictionary<string, double> forAccountsWithShares, IEnumerable<BillItem>? items = null)
     {
         Description = description ?? throw new ArgumentNullException(nameof(description));
-        _items = items != null ? new List<BillItem>(items) : new List<BillItem>();
-        PaidByAccount = paidByAccount ?? throw new ArgumentNullException(nameof(paidByAccount));
-        _forAccountsWithShares = new Dictionary<string, double>(forAccountsWithShares ?? throw new ArgumentNullException(nameof(forAccountsWithShares)));
-        
-        if (_forAccountsWithShares.Count == 0)
-            throw new ArgumentException("ForAccountsWithShares must contain at least one account.", nameof(forAccountsWithShares));
-            
-        var shareSum = _forAccountsWithShares.Values.Sum();
-        if (Math.Abs(shareSum - 1.0) > 0.0001)
-            throw new ArgumentException($"Account shares must sum to 1.0, but sum is {shareSum}.", nameof(forAccountsWithShares));
-        
-        // Calculate total from items if present
-        TotalAmount = _items.Count > 0 ? _items.Sum(item => item.Amount) : 0;
-    }
-    
-    /// <summary>
-    /// Creates a bill without itemization, using only total amount and shares.
-    /// </summary>
-    public Bill(string description, double totalAmount, string paidByAccount, Dictionary<string, double> forAccountsWithShares)
-    {
-        Description = description ?? throw new ArgumentNullException(nameof(description));
-        _items = new List<BillItem>();
         TotalAmount = totalAmount;
         PaidByAccount = paidByAccount ?? throw new ArgumentNullException(nameof(paidByAccount));
         _forAccountsWithShares = new Dictionary<string, double>(forAccountsWithShares ?? throw new ArgumentNullException(nameof(forAccountsWithShares)));
-        
+        _items = items != null ? new List<BillItem>(items) : new List<BillItem>();
+
         if (_forAccountsWithShares.Count == 0)
             throw new ArgumentException("ForAccountsWithShares must contain at least one account.", nameof(forAccountsWithShares));
-            
+
         var shareSum = _forAccountsWithShares.Values.Sum();
         if (Math.Abs(shareSum - 1.0) > 0.0001)
             throw new ArgumentException($"Account shares must sum to 1.0, but sum is {shareSum}.", nameof(forAccountsWithShares));
@@ -54,21 +30,7 @@ public class Bill
     public IReadOnlyList<BillItem> Items => new ReadOnlyCollection<BillItem>(_items);
 
     public double TotalAmount { get; }
-
-    public static Bill CreateSplitBill(string description, string category, double totalAmount, Dictionary<string, double> shares, string paidByAccount)
-    {
-        if (shares == null || shares.Count == 0)
-            throw new ArgumentException("Shares dictionary must contain at least one entry.", nameof(shares));
-
-        var shareSum = shares.Values.Sum();
-        if (Math.Abs(shareSum - 1.0) > 0.0001)
-            throw new ArgumentException($"Shares must sum to 1.0, but sum is {shareSum}.", nameof(shares));
-
-        var items = shares.Select(kvp => new BillItem(totalAmount * kvp.Value, kvp.Key, category)).ToList();
-        
-        return new Bill(description, items, paidByAccount, shares);
-    }
-
+    
     /// <summary>
     /// Computes the debts this bill creates: each person in ForAccountsWithShares (except PaidByAccount) owes PaidByAccount their share.
     /// </summary>

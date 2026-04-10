@@ -1,157 +1,92 @@
-# Stream editor layer
+# StreamEditor
 In the stream editor layer the user is composing event streams.
+
 The modifications in this layer are auditable - all modifications should carry a timestamp.
 
-## UX Feature: Parallel features.
-Support operating on different stream of events. Utitilities such as copy, copy up to a certain time, copy some range of events. etc.
+# StreamProcessor
+Take as input a raw event stream.
 
-## Event Stream layer
-Accepts a list of events as input to calculate intermediary states. 
+As a later optimization, add support for deltas.
 
-The stream of events cannot be changed once processed.
+# Event processing
+Each event type defines the logic of how the event modifies the state maintained by the StreamProcessor.
 
-Events contain the logic of how the state must evolve.
+The interface of event processing allows the events to emit a MaybeEvent back (for subsequent payments on the loan for example)
 
-## Backend feature: Events generating additional events
-TODO Should inherit the tags from the original.
+# State 
 
-## State layer
-State objects are immutable. each event generates a new state. How is the state represented and what is captured?
+## Primitives
+Event, Bill, Transaction.
 
-## Domain objects
+These are the primitives that are persisted. Persistence in this instance is scoped to the lifecycle of a certain event stream being active in the app. 
 
-## Bill 
-Amount.
-Who paid for it
-Who did we pay it for -> between accounts Shares.
-Itemized
-    Name, amount.
-Tags
+## Higher level entities
+Balance - keeps track of how much a person owes others.
 
-## Balances
-How much each person owes this other person. 
-    => Sum of all bills btween A, B. // so I don't really need a state for that.
-        it can be calculated at query time.
-## Loan
-Loan state makes sense to be materialized.
-    => Next payment.
-    => Overrides for
+Loan - keeps track of interest rate, next payment, etc.
 
-    State is more of a cache. between bills, transactions and events.
+# Query Service
+The query service gives controlled access to data in the state.
 
-        => simplifies the calculation.
-        => calculate ahead of time.
-            The state at a certain time.
-        => calculate at query time.
-Loan payment is modelled as a bill.
+## Specialized endpoints
+### Specific point in time
+Loan, with possibility to split per person.
+    - next payment. - split into fee, principal, interest.
+    - total / remaining interest to pay.
+    - total / remaining principal.
 
+    + related entities timeline:
+        Events, Bills that have affected and will affect the loan relative to the current point in time.
 
-#### Person
-#### Account
-#### 
-
-### Domain validation rules
-
-
-# Database with veriosining.
-
-For one event stream, the bills can be added to the database. 
-
-
-# Lifecycle of a bill:
-
-1. BillCreatedEvent is processed.
-    A bill is added to the database. 
-
-    Graph layer links it to:
-        Person who paid it.
-        Person who it
-
-
-
-
-transactions == settle balances (Alin transfers Diana X)
-Bills == money going outside.
-
-
-Stream Editor:
-    Edits are logged.
-
-UX: query event stream in the future:
-    -> What are the most recent tr
-
-
-Event Stream:
-    event stream is processed.
-
-    <timestamp, state> + event = <timestamp, new_state>
+Balances - per person:
+    X owes Y this much:
     
-    Queries to be answered:
-        At a timestamp X:
-            -> What is the next payment amount.
-            -> Balances: Alin -> Cont comun
-            -> Which bills have been paid from account X?
-            -> 
+    + related entities timeline:
+        Events, Bills, Transactions that have affected and will affect the balance relative to the current point intime.
 
-Materialized state layer:
-    Loan state.
-        TotalInterestPaid - query the bill items with a certain tag.
+### Timeseries value
+Numeric value to track over time.
+For numeric values such as loan principal, interest paid, etc, to be displayed over time.
 
 
-    Accounts.
-    Balances.
-        Alin owes Diana X.
-    
-    Can hold pointers to the shared persistence layer.
-
-Share persistence layer:
-    Bills?
+## Direct database access.
+Endpoint which allows direct access to the underlying database. Interface? First, what's the right database to choose?
 
 
-View over a state:
-    Certain tags.
+# Data model
 
-=> 
+All entities:
+    // that's equivalent to one copy per time in a fully denormalized DB.
+    ArrayOf<Time, DataVersion>
+    Tags
 
+Immutable (they can be put in one big collection and filtered by time)
+    Bills:
+        ...
+    Transactions:
+    Events:
 
-Functional:
-    Balance(EventStream, Timestamp, Alin, Diana)
-        Balance(EventStream, Timestamp - 1, Alin, Diana) + aggregate of the last event.
+Mutable:
+    Loan:
+        Evolves with time.
+    Balance:
+        Evolves with time.
 
-How do I model a bill that is split amongst 2 people?
-    Only one person/ comm account is paying.
-    The rest are settled via transactions.
-
-Bills and transactions are the core.
-
-State around them:
-    Loan.
-    Balances.
-
-Events:
-    Loan Events.
-    Override events (e.g. set balance to 0)
-
-Event editor:
+    Current checkpoint based system, where the state is cloned?
 
 
-/// Queries:
+For the loan, do I really need the materialization?
+    No. The bills are sufficient to understand next payment.
+    Remaining balance etc. is a bit harder to calculate, but maybe I can cache it?
 
-Next payment, for a given date.
-    -> From the loan state at that date.
+    Or can I just query the bills that pay?
 
-Interest Paid thus far.
-    from persistence: 
-        All Biills from the loan, with timestamp < given date.
+Bills carry a pointer to the loan.
+    => query for recent / future bills becomes:
+        bills.Where(loan == loan).Where(time < currentTime);
 
-Remaining principals, per person:
-    At a given state.
-        Recent events:
-            advance payment - is it a bill or just an event?
-                Needs to be a bill for tracking purposes.
-                
-                Maybe acct transactions are also bills?
-                    Alin paid Diana 100Eur, on behalf of Alin. 
-                    Person, ACcount difference.
-                        One person owns multiple accounts.
-                        Balances are between Personss? but how do you deal with cont comun then?
+Bills carry a pointer to the balance?
+    => query for recent becomes:
+        bills.Where(affected.Contains(balance)).Where(time < currentTime)
+
+

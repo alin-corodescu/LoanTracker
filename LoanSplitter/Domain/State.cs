@@ -29,10 +29,10 @@ public class State
                 return (T)(object)newAccount;
             }
 
-            // Auto-create PersonBalances on first reference
-            if (typeof(T) == typeof(PersonBalances))
+            // Auto-create AccountBalances on first reference
+            if (typeof(T) == typeof(AccountBalances))
             {
-                var newBalances = new PersonBalances();
+                var newBalances = new AccountBalances();
                 _entities[entityName] = newBalances;
                 return (T)(object)newBalances;
             }

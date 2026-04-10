@@ -39,7 +39,8 @@ Currency exchange at a specific date
 -> Output: 
     how much each person should have contributed to cont comun.
     
-    Cum facem noi settle?
+## Bugetel settlement
+    Cum facm noi settle?
         Contributia mea e 2.3 luni peste Diana.
         DAca punem 3 luni,
             Put si eu 0.7
@@ -114,3 +115,110 @@ Pointers to other artifacts: factura la utilitati
 
 # Feature 
 Notes like experience
+
+
+## UX Feature: Parallel features.
+Support operating on different stream of events. Utitilities such as copy, copy up to a certain time, copy some range of events. etc.
+
+
+Apartment value.
+
+Tax gains.
+    How do we split them by person.
+    Net cost of the loan.
+
+Queries:
+    interest paid in a year.
+
+State management:   
+    State objects with linkage back to events that modified them.
+    Create a graph between different objects:
+
+
+/// Queries:
+
+Next payment, for a given date.
+    -> From the loan state at that date.
+
+Interest Paid thus far.
+    from the database: 
+        All Biills from the loan, with timestamp < given date.
+
+Remaining principals, per person:
+    At a given state.
+        Recent events:
+            advance payment - is it a bill or just an event?
+                Needs to be a bill for tracking purposes.
+                
+                Maybe acct transactions are also bills?
+                    Alin paid Diana 100Eur, on behalf of Alin. 
+                    Person, ACcount difference.
+                        One person owns multiple accounts.
+                        Balances are between Personss? but how do you deal with cont comun then?
+
+Can different event types generate bills?
+    Advance Payment.
+    Loan Payment.
+
+Assume the loan creates a bill, how do I override stuff about it?
+    Currently I have a way to inject a different payment share event.
+
+    How do I automatically add an event that updates the balance. Split type: update balance, update individual loans.
+
+# Views
+
+At a glance view:
+    Per person:
+        - remaining principal.
+        - interest this year: paid thus far + future.
+        - next loan payment
+            - recent loan events.
+        - balance with cont comun
+            - recent bills and transactions that modified this balance
+
+Color code: past, present, future. System generated vs user.
+
+Deeper dives:
+    Query language + visualization?
+    + query editor.
+
+Allow queries across event streams for effective comparisons
+
+Bill summary.
+    Filter by tags
+    Color them differently for system generated vs non system generated.
+
+
+Add a link to local copilot as proxy for the AI interface to query languages.
+
+
+View the apartment value as he asset value for the loan - for a more optimistic view, instead of how
+# ScratchPad
+
+I add a new bill. Add directly to the DB? 
+    Live queries?
+
+    Redo the query when processing the event.
+
+Processor shouldn't keep the loan in memory.
+
+    => it should always query the persistence layer.
+        
+
+Balance is a query.
+Loan is set of queries.
+    => LoanCreatedEvent.
+    => Bills related to the loan.
+
+
+I started the discussion from defining the loan in a way that allows easy recomputation of the bills.
+
+But any change to the loan essentially invalidates all future loan bills.
+
+Loan(time) =>
+    Loan(time - 1) 
+
+
+Bills
+    If influences balance.
+        invalidate all future instances of that balance (needs recalculation).

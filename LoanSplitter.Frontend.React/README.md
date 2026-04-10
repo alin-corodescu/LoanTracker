@@ -1,1 +1,0 @@
-React frontend for the finance tracker app.

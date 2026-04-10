@@ -60,9 +60,9 @@ public class BillCreatedEventTests
         Assert.AreEqual("Groceries", bill.Items[1].Category);
 
         // Check balances were updated: both Alin and Diana owe creditAcct
-        var balances = newState.GetEntityByName<PersonBalances>(PersonBalances.StateKey);
-        Assert.AreEqual(500.0, balances.Balances["Alin"]["creditAcct"]);
-        Assert.AreEqual(300.0, balances.Balances["Diana"]["creditAcct"]);
+        var balances = newState.GetEntityByName<AccountBalances>(AccountBalances.StateKey);
+        Assert.AreEqual(500.0, balances.GetNetAmount("Alin", "creditAcct"));
+        Assert.AreEqual(300.0, balances.GetNetAmount("Diana", "creditAcct"));
 
         // Account should NOT have transactions (bills no longer create account transactions)
         var account = newState.GetEntityByName<Account>("creditAcct");
@@ -164,7 +164,7 @@ public class BillCreatedEventTests
             { "Alin", 0.625 },
             { "Diana", 0.375 }
         };
-        var bill = new Bill("Groceries", billItems, "creditAcct", forAccounts);
+        var bill = new Bill("Groceries", billItems.Sum(i => i.Amount), "creditAcct", forAccounts, billItems);
 
         // Act
         var updatedAccount = bill.ApplyToAccount(account);
